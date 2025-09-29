@@ -1,0 +1,41 @@
+.productos-lista {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: #f8f9fa;
+}
+
+.producto-item {
+  padding: 8px;
+  border-radius: 4px;
+  background-color: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.producto-item:hover {
+  background-color: #f0f4ff;
+}
+
+.payment-badge {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.payment-badge.efectivo {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.payment-badge.qr {
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+.payment-badge.sin-especificar {
+  background-color: #f8f9fa;
+  color: #6c757d;
+}

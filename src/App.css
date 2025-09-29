@@ -1,0 +1,567 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+/* Estilos para la información del usuario en el header */
+.main-header-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 20px;
+  color: white;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+}
+
+.user-name {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.user-role {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.user-avatar {
+  display: flex;
+  align-items: center;
+}
+
+/* Reset completo para eliminar espacios */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+#root {
+  height: 100vh !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Ocultar completamente el main-header */
+.main-header {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Ajustar el wrapper principal */
+.wrapper {
+  min-height: 100vh !important;
+  height: 100vh !important;
+  display: flex !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Ajustar el sidebar para que no interfiera */
+.sidebar {
+  position: fixed !important;
+  height: 100vh !important;
+  z-index: 1000 !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+}
+
+/* Asegurar que el contenido principal tenga el ancho correcto */
+.main-panel {
+  width: calc(100% - 250px) !important;
+  margin-left: 250px !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  min-height: 100vh !important;
+  height: 100vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  position: relative !important;
+  overflow: hidden !important;
+  flex: 1 !important;
+}
+
+/* Ajustar el container principal para usar todo el espacio */
+.main-panel .container,
+.main-panel .container-fluid {
+  margin: 0 !important;
+  padding: 0 !important;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  overflow: hidden !important;
+}
+
+/* Asegurar que el contenido de las páginas use todo el espacio disponible */
+.main-panel .container > *,
+.main-panel .container-fluid > * {
+  flex: 1 !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Asegurar que las páginas específicas ocupen todo el espacio */
+.dashboard-container,
+.container-fluid,
+.container {
+  height: 100% !important;
+  min-height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Eliminar cualquier padding o margin innecesario */
+.dashboard-container {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Asegurar que las tarjetas y contenido ocupen todo el espacio */
+.card {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
+.card-body {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Eliminar espacios en componentes específicos */
+.row {
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100% !important;
+}
+
+.col, .col-12, .col-lg-8, .col-lg-4, .col-md-12 {
+  padding: 0 !important;
+  margin: 0 !important;
+  height: 100% !important;
+}
+
+/* Responsive para pantallas pequeñas */
+@media (max-width: 991px) {
+  .main-panel {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+}
+
+/* Eliminar cualquier espacio en elementos específicos */
+.py-0, .py-1, .py-2, .py-3, .py-4, .py-5 {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.mb-0, .mb-1, .mb-2, .mb-3, .mb-4, .mb-5 {
+  margin-bottom: 0 !important;
+}
+
+.mt-0, .mt-1, .mt-2, .mt-3, .mt-4, .mt-5 {
+  margin-top: 0 !important;
+}
+
+/* Asegurar que el contenido principal esté pegado al tope */
+.main-panel > *:first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Eliminar cualquier gap o spacing */
+.gap-1, .gap-2, .gap-3, .gap-4, .gap-5 {
+  gap: 0 !important;
+}
+
+/* Asegurar que los elementos flex ocupen todo el espacio */
+.d-flex {
+  height: 100% !important;
+  min-height: 100% !important;
+}
+
+.flex-column {
+  height: 100% !important;
+  min-height: 100% !important;
+}
+
+/* Eliminar cualquier padding en el contenido principal */
+.main-panel .container-fluid {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* ===== ESTILOS ESPECÍFICOS PARA REPORTES ===== */
+/* Solo aplicar estos estilos a tablas de reportes específicas */
+.reportes-table,
+.modern-table,
+.table-striped {
+  width: 100% !important;
+  table-layout: fixed !important;
+  word-wrap: break-word !important;
+}
+
+.reportes-table th,
+.reportes-table td,
+.modern-table th,
+.modern-table td,
+.table-striped th,
+.table-striped td {
+  padding: 8px 12px !important;
+  vertical-align: middle !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Anchos específicos para columnas de reportes SOLO en tablas de reportes */
+.reportes-table th:nth-child(1), /* PRODUCTO */
+.reportes-table td:nth-child(1),
+.modern-table th:nth-child(1),
+.modern-table td:nth-child(1) {
+  width: 20% !important;
+  min-width: 150px !important;
+}
+
+.reportes-table th:nth-child(2), /* ALMACÉN */
+.reportes-table td:nth-child(2),
+.modern-table th:nth-child(2),
+.modern-table td:nth-child(2) {
+  width: 15% !important;
+  min-width: 120px !important;
+}
+
+.reportes-table th:nth-child(3), /* CANTIDAD */
+.reportes-table td:nth-child(3),
+.modern-table th:nth-child(3),
+.modern-table td:nth-child(3) {
+  width: 10% !important;
+  min-width: 80px !important;
+  text-align: center !important;
+}
+
+.reportes-table th:nth-child(4), /* PRECIO DE VENTA */
+.reportes-table td:nth-child(4),
+.modern-table th:nth-child(4),
+.modern-table td:nth-child(4) {
+  width: 15% !important;
+  min-width: 100px !important;
+  text-align: center !important;
+}
+
+.reportes-table th:nth-child(5), /* FORMA DE PAGO */
+.reportes-table td:nth-child(5),
+.modern-table th:nth-child(5),
+.modern-table td:nth-child(5) {
+  width: 15% !important;
+  min-width: 120px !important;
+  text-align: center !important;
+}
+
+.reportes-table th:nth-child(6), /* FECHA DE VENTA */
+.reportes-table td:nth-child(6),
+.modern-table th:nth-child(6),
+.modern-table td:nth-child(6) {
+  width: 15% !important;
+  min-width: 100px !important;
+  text-align: center !important;
+}
+
+/* Estilos para badges y elementos especiales SOLO en reportes */
+.reportes-table .badge,
+.modern-table .badge,
+.table-striped .badge {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+  display: inline-block !important;
+}
+
+.payment-badge {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+  display: inline-block !important;
+  padding: 4px 8px !important;
+  border-radius: 12px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.payment-badge.efectivo {
+  background: rgba(39, 174, 96, 0.1) !important;
+  color: #27ae60 !important;
+  border: 1px solid rgba(39, 174, 96, 0.3) !important;
+}
+
+.payment-badge.qr {
+  background: rgba(52, 152, 219, 0.1) !important;
+  color: #3498db !important;
+  border: 1px solid rgba(52, 152, 219, 0.3) !important;
+}
+
+/* Estilos para texto truncado SOLO en reportes */
+.reportes-table .text-truncate,
+.modern-table .text-truncate,
+.table-striped .text-truncate {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+}
+
+/* Estilos para tablas responsivas SOLO en reportes */
+.reportes-table .table-responsive,
+.modern-table .table-responsive,
+.table-striped .table-responsive {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
+/* Estilos específicos para reportes de ventas */
+.reportes-table th,
+.modern-table th,
+.table-striped th {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  border: none !important;
+  padding: 10px 8px !important;
+  font-size: 0.85rem !important;
+  line-height: 1.2 !important;
+}
+
+.reportes-table td,
+.modern-table td,
+.table-striped td {
+  padding: 10px 8px !important;
+  font-size: 0.85rem !important;
+  line-height: 1.2 !important;
+}
+
+/* Estilos para imágenes en tablas SOLO en reportes */
+.reportes-table img,
+.modern-table img,
+.table-striped img {
+  max-width: 100% !important;
+  height: auto !important;
+  object-fit: cover !important;
+}
+
+/* Estilos para iconos en tablas SOLO en reportes */
+.reportes-table i,
+.modern-table i,
+.table-striped i {
+  margin-right: 4px !important;
+  font-size: 0.8rem !important;
+}
+
+/* Estilos para fechas en tablas SOLO en reportes */
+.reportes-table .fecha-venta,
+.modern-table .fecha-venta,
+.table-striped .fecha-venta {
+  white-space: nowrap !important;
+  font-size: 0.8rem !important;
+  color: #6c757d !important;
+}
+
+/* Estilos para precios en tablas SOLO en reportes */
+.reportes-table .precio-venta,
+.modern-table .precio-venta,
+.table-striped .precio-venta {
+  font-weight: 600 !important;
+  color: #28a745 !important;
+  white-space: nowrap !important;
+}
+
+/* Estilos para cantidades en tablas SOLO en reportes */
+.reportes-table .cantidad-badge,
+.modern-table .cantidad-badge,
+.table-striped .cantidad-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  border-radius: 50% !important;
+  padding: 4px 8px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  min-width: 30px !important;
+  text-align: center !important;
+  display: inline-block !important;
+}
+
+/* ===== ESTILOS ESPECÍFICOS PARA LA TIENDA ===== */
+/* Restaurar estilos normales para las tablas de la tienda */
+.table:not(.reportes-table):not(.modern-table):not(.table-striped),
+.tienda-productos-table {
+  width: 100% !important;
+  table-layout: auto !important;
+}
+
+.table:not(.reportes-table):not(.modern-table):not(.table-striped) th,
+.table:not(.reportes-table):not(.modern-table):not(.table-striped) td,
+.tienda-productos-table th,
+.tienda-productos-table td {
+  padding: 12px 8px !important;
+  vertical-align: middle !important;
+  text-align: left !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+/* Restaurar estilos normales para badges en la tienda */
+.table:not(.reportes-table):not(.modern-table):not(.table-striped) .badge,
+.tienda-productos-table .badge {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  max-width: none !important;
+  display: inline !important;
+}
+
+/* Restaurar estilos normales para texto en la tienda */
+.table:not(.reportes-table):not(.modern-table):not(.table-striped) .text-truncate,
+.tienda-productos-table .text-truncate {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  max-width: none !important;
+}
+
+/* Restaurar estilos normales para imágenes en la tienda */
+.table:not(.reportes-table):not(.modern-table):not(.table-striped) img,
+.tienda-productos-table img {
+  max-width: none !important;
+  height: auto !important;
+  object-fit: cover !important;
+}
+
+/* Restaurar estilos normales para iconos en la tienda */
+.table:not(.reportes-table):not(.modern-table):not(.table-striped) i,
+.tienda-productos-table i {
+  margin-right: 4px !important;
+  font-size: inherit !important;
+}
+
+/* Estilos específicos para la tabla de productos de la tienda */
+.tienda-productos-table {
+  border-collapse: collapse !important;
+  width: 100% !important;
+}
+
+.tienda-productos-table thead th {
+  background-color: #28a745 !important;
+  color: white !important;
+  font-weight: 600 !important;
+  text-align: center !important;
+  padding: 12px 8px !important;
+  border: 1px solid #dee2e6 !important;
+  font-size: 0.85rem !important;
+}
+
+.tienda-productos-table tbody td {
+  padding: 8px !important;
+  border: 1px solid #dee2e6 !important;
+  vertical-align: middle !important;
+  font-size: 0.9rem !important;
+}
+
+.tienda-productos-table tbody tr:nth-child(even) {
+  background-color: #f8f9fa !important;
+}
+
+.tienda-productos-table .btn {
+  font-size: 0.8rem !important;
+  padding: 4px 8px !important;
+  margin: 2px !important;
+}
+
+.tienda-productos-table .badge {
+  font-size: 0.8rem !important;
+  padding: 6px 10px !important;
+}
+
+.tienda-productos-table img {
+  width: 40px !important;
+  height: 40px !important;
+  object-fit: cover !important;
+  border-radius: 4px !important;
+}
