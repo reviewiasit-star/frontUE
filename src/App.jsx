@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import Login from './pages/Login';
-import Index from './pages/Index';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Login from './pages/microservices/common/Login';
+import Index from './pages/microservices/common/Index';
+import RecuperarPassword from './pages/microservices/common/RecuperarPassword';
+import RestablecerPassword from './pages/microservices/common/RestablecerPassword';
+import EnvioComprobantes from './pages/microservices/common/EnvioComprobantes';
 import AuthService from './services/authService';
 
 function App() {
@@ -67,11 +71,36 @@ function App() {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
-  }
-  
-  return <Index onLogout={handleLogout} user={user} />;
+  return (
+    <Router>
+      <Routes>
+        {/* Rutas públicas */}
+        <Route 
+          path="/login" 
+          element={
+            isAuthenticated 
+              ? <Navigate to="/" replace /> 
+              : <Login onLogin={handleLogin} />
+          } 
+        />
+        <Route path="/recuperar-password" element={<RecuperarPassword />} />
+        <Route path="/restablecer-password" element={<RestablecerPassword />} />
+        <Route path="/envio-comprobantes" element={<EnvioComprobantes />} />
+
+        {/* Rutas autenticadas: permitir que Index maneje todo el resto */}
+        <Route 
+          path="/*" 
+          element={
+            isAuthenticated 
+              ? <Index onLogout={handleLogout} user={user} /> 
+              : <Navigate to="/login" replace />
+          } 
+        />
+
+        {/* Fallback eliminado: Index maneja rutas internas con */}
+      </Routes>
+    </Router>
+  );
 }
 
 export default App;

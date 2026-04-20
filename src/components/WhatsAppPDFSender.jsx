@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-function WhatsAppPDFSender({ isOpen, onClose, onSend, pdfBlob, studentName }) {
+function WhatsAppPDFSender({ isOpen, onClose, onSend, pdfBlob, studentName, fileName, defaultMessage, initialPhoneNumber }) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -10,10 +10,13 @@ function WhatsAppPDFSender({ isOpen, onClose, onSend, pdfBlob, studentName }) {
 
   useEffect(() => {
     if (isOpen && pdfBlob) {
+      if (initialPhoneNumber && !phoneNumber) {
+        setPhoneNumber(String(initialPhoneNumber));
+      }
       checkWhatsAppStatus();
       uploadPDF();
     }
-  }, [isOpen, pdfBlob]);
+  }, [isOpen, pdfBlob, initialPhoneNumber]);
 
   const checkWhatsAppStatus = async () => {
     try {
@@ -40,7 +43,11 @@ function WhatsAppPDFSender({ isOpen, onClose, onSend, pdfBlob, studentName }) {
     try {
       const token = localStorage.getItem('token');
       const formData = new FormData();
-      formData.append('pdf', pdfBlob, `formulario_${studentName.replace(/\s+/g, '_')}.pdf`);
+      const safeStudentName = (studentName || 'documento').toString();
+      const suggestedName = fileName
+        ? fileName
+        : `formulario_${safeStudentName.replace(/\s+/g, '_')}.pdf`;
+      formData.append('pdf', pdfBlob, suggestedName);
 
       const response = await fetch(`http://${window.location.hostname}:3001/api/upload/upload-pdf`, {
         method: 'POST',
@@ -93,7 +100,7 @@ function WhatsAppPDFSender({ isOpen, onClose, onSend, pdfBlob, studentName }) {
         body: JSON.stringify({
           phoneNumber: phoneNumber.trim(),
           pdfPath: uploadedFilePath,
-          message: message || `Aquí tienes el formulario de inscripción de ${studentName}:`
+          message: message || defaultMessage || `Aquí tienes el documento solicitado:`
         })
       });
 
@@ -226,7 +233,7 @@ function WhatsAppPDFSender({ isOpen, onClose, onSend, pdfBlob, studentName }) {
                   <textarea
                     className="form-control"
                     rows="3"
-                    placeholder={`Aquí tienes el formulario de inscripción de ${studentName}:`}
+                    placeholder={defaultMessage || `Aquí tienes el documento solicitado:`}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                   />

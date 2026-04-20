@@ -148,7 +148,36 @@ html, body {
   flex-direction: column !important;
   height: 100% !important;
   min-height: 100% !important;
+  max-height: 100vh !important;
   overflow: hidden !important;
+}
+
+/* Sobrescribir estilos específicos de kaiadmin.css que causan espacios */
+.main-panel > .container {
+  min-height: 100% !important;
+  margin-top: 0 !important;
+  height: 100% !important;
+  max-height: 100vh !important;
+}
+
+/* Eliminar el cálculo de min-height que deja espacio para el footer */
+.main-panel > .container:not(.container-full) {
+  min-height: 100% !important;
+  height: 100% !important;
+}
+
+/* Asegurar que no haya espacio reservado para el footer */
+.main-panel {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Eliminar cualquier pseudo-elemento que pueda estar causando espacio */
+.main-panel::after,
+.main-panel::before {
+  display: none !important;
+  content: none !important;
+  height: 0 !important;
 }
 
 /* Asegurar que el contenido de las páginas use todo el espacio disponible */
@@ -260,6 +289,50 @@ html, body {
   padding-right: 0 !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
+}
+
+/* Eliminar footer completamente cuando está vacío o para Administrador */
+.main-panel > .footer:empty,
+.main-panel > .footer {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  position: static !important;
+  visibility: hidden !important;
+  overflow: hidden !important;
+  line-height: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+/* Asegurar que el main-panel no tenga espacio para el footer */
+.main-panel {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Eliminar cualquier espacio que pueda quedar al final del container */
+.main-panel > .container:after,
+.main-panel > .container-fluid:after {
+  display: none !important;
+  content: none !important;
+  height: 0 !important;
+}
+
+/* Estilos para modales - usando el mismo patrón que Compromiso.jsx */
+.modal.show.d-block {
+  z-index: 1050;
+}
+
+.modal.show.d-block .modal-dialog {
+  margin: 1.75rem auto;
+}
+
+.modal.show.d-block .modal-dialog.modal-xl {
+  max-width: 1140px;
 }
 
 /* ===== ESTILOS ESPECÍFICOS PARA REPORTES ===== */

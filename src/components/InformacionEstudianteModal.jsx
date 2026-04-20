@@ -19,15 +19,26 @@ const InformacionEstudianteModal = ({
   pagosFiltrados,
   handleSubirComprobante,
   handleDescargarComprobante,
+  handleVerComprobante,
   handleEliminarComprobante,
   formatearFecha,
-  formatearMonto
+  formatearMonto,
+  obtenerMesDeFecha,
+  obtenerAnioDeFecha
 }) => {
   const [activeTab, setActiveTab] = useState('datos');
 
   const getBecaEstudiante = (id_beca) => {
     if (!id_beca) return null;
     return becas.find(b => String(b.id) === String(id_beca));
+  };
+
+  /** Etiqueta visible: en BD puede quedar `material`; se muestra como Servicio (transporte, materiales, etc.). */
+  const etiquetaTipoPago = (tipo) => {
+    const t = (tipo || '').toLowerCase();
+    if (t === 'material' || t === 'servicio') return { text: 'Servicio', className: 'bg-success' };
+    if (t === 'ambos') return { text: 'Cuota + Servicio', className: 'bg-info' };
+    return { text: 'Cuota', className: 'bg-primary' };
   };
 
   if (!show) return null;
@@ -512,14 +523,17 @@ const InformacionEstudianteModal = ({
                       {/* Filtros */}
                       <div className="row mb-3">
                         <div className="col-md-3">
+                          <label className="form-label small text-muted mb-1">Tipo de pago</label>
                           <select className="form-select" value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)}>
-                            <option value="">Todos los tipos</option>
-                            <option value="cuota">Cuota mensual</option>
+                            <option value="Todos">Todos</option>
+                            <option value="Cuota">Cuota</option>
+                            <option value="Servicio">Servicio</option>
+                            <option value="Ambos">Cuota + Servicio</option>
                           </select>
                         </div>
                         <div className="col-md-3">
                           <select className="form-select" value={filtroMes} onChange={e => setFiltroMes(e.target.value)}>
-                            <option value="">Todos los meses</option>
+                            <option value="Todos">Todos los meses</option>
                             <option value="1">Enero</option>
                             <option value="2">Febrero</option>
                             <option value="3">Marzo</option>
@@ -564,40 +578,79 @@ const InformacionEstudianteModal = ({
                                 <tr key={index}>
                                   <td>{formatearFecha(pago.fecha_pago)}</td>
                                   <td>
-                                    <span className="badge bg-primary">
-                                      Cuota mensual
+                                    <span className={`badge ${etiquetaTipoPago(pago.tipo_pago).className}`}>
+                                      {etiquetaTipoPago(pago.tipo_pago).text}
                                     </span>
                                   </td>
-                                  <td>{pago.mes_pagado}</td>
-                                  <td>{pago.anio_pagado}</td>
+                                  <td>{pago.mes_pagado || obtenerMesDeFecha(pago.fecha_pago)}</td>
+                                  <td>{pago.anio_pagado || obtenerAnioDeFecha(pago.fecha_pago)}</td>
                                   <td className="fw-bold">Bs {formatearMonto(pago.monto)}</td>
                                   <td>{pago.observacion || '-'}</td>
                                   <td>
                                     {pago.comprobante_url ? (
-                                      <div className="btn-group btn-group-sm">
-                                        <button 
-                                          className="btn btn-outline-primary btn-sm"
-                                          onClick={() => handleDescargarComprobante(pago.comprobante_url)}
-                                          title="Descargar comprobante"
-                                        >
-                                          <i className="fas fa-download"></i>
-                                        </button>
-                                        <button 
-                                          className="btn btn-outline-danger btn-sm"
-                                          onClick={() => handleEliminarComprobante(pago.id)}
-                                          title="Eliminar comprobante"
-                                        >
-                                          <i className="fas fa-trash"></i>
-                                        </button>
+                                      <div>
+                                        <div className="alert alert-success p-1 mb-1 text-center">
+                                          <i className="fas fa-check-circle me-1"></i> 
+                                          <strong>Comprobante subido</strong>
+                                        </div>
+                                        <div className="btn-group btn-group-sm w-100">
+                                          {handleVerComprobante && (
+                                            <button 
+                                              className="btn btn-outline-info btn-sm"
+                                              onClick={() => handleVerComprobante(pago.comprobante_url, `comprobante-${pago.id}.pdf`)}
+                                              title="Ver comprobante"
+                                            >
+                                              <i className="fas fa-eye"></i>
+                                            </button>
+                                          )}
+                                          <button 
+                                            className="btn btn-outline-primary btn-sm"
+                                            onClick={() => handleDescargarComprobante(pago.comprobante_url)}
+                                            title="Descargar comprobante"
+                                          >
+                                            <i className="fas fa-download"></i>
+                                          </button>
+                                          <button 
+                                            className="btn btn-outline-danger btn-sm"
+                                            onClick={() => handleEliminarComprobante(pago.id)}
+                                            title="Eliminar comprobante"
+                                          >
+                                            <i className="fas fa-trash"></i>
+                                          </button>
+                                        </div>
                                       </div>
                                     ) : (
-                                      <button 
-                                        className="btn btn-outline-success btn-sm"
-                                        onClick={() => handleSubirComprobante(pago)}
-                                        title="Subir comprobante"
-                                      >
-                                        <i className="fas fa-upload"></i>
-                                      </button>
+                                      <div>
+                                        <label htmlFor={`comprobante-${pago.id}`} className="btn btn-success btn-sm mb-1 w-100">
+                                          <i className="fas fa-camera me-1"></i> Tomar foto
+                                        </label>
+                                        <input
+                                          id={`comprobante-${pago.id}`}
+                                          type="file"
+                                          accept="image/*"
+                                          capture="environment"
+                                          className="d-none"
+                                          onChange={(e) => {
+                                            if (e.target.files && e.target.files[0]) {
+                                              handleSubirComprobante(pago, e.target.files[0]);
+                                            }
+                                          }}
+                                        />
+                                        <label htmlFor={`archivo-${pago.id}`} className="btn btn-outline-primary btn-sm mb-1 w-100">
+                                          <i className="fas fa-file-upload me-1"></i> Subir archivo
+                                        </label>
+                                        <input
+                                          id={`archivo-${pago.id}`}
+                                          type="file"
+                                          accept=".jpg,.jpeg,.png,.pdf"
+                                          className="d-none"
+                                          onChange={(e) => {
+                                            if (e.target.files && e.target.files[0]) {
+                                              handleSubirComprobante(pago, e.target.files[0]);
+                                            }
+                                          }}
+                                        />
+                                      </div>
                                     )}
                                   </td>
                                 </tr>
@@ -627,6 +680,7 @@ const InformacionEstudianteModal = ({
           </div>
         </div>
       </div>
+
     </div>
   );
 };

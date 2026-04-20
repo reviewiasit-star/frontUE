@@ -66,3 +66,31 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Animación para el menú móvil */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Mejoras para el menú móvil */
+.mobile-menu-item:hover {
+  background-color: #f8f9fa !important;
+  transform: translateX(5px);
+}
+
+.mobile-submenu-item:hover {
+  background-color: #e9ecef !important;
+}
+
+/* ---- Sidebar perfil responsive ---- */
+.sidebar .sidebar-content .user-card { display: flex; }
+.sidebar_minimize .sidebar .sidebar-content .user-card { display: none; }
+/* Al pasar el mouse en modo minimizado, mostrar tarjeta */
+.sidebar_minimize_hover .sidebar .sidebar-content .user-card { display: flex !important; }

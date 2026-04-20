@@ -1,6 +1,8 @@
 import React from 'react';
 import NotificationModal from './NotificationModal';
 import { useNotification } from '../hooks/useNotification';
+import { getApiUrl } from '../config/apiConfig';
+import AuthService from '../services/authService';
 
 function CompromisoModal({ isOpen, onClose, form, becas, inscripcion }) {
   const { notification, showSuccess, showError, hideNotification } = useNotification();
@@ -82,7 +84,9 @@ function CompromisoModal({ isOpen, onClose, form, becas, inscripcion }) {
     };
     
     try {
-      const res = await fetch(`http://${window.location.hostname}:3001/api/compromiso-economico`, {
+      const user = AuthService.getUser();
+      const apiUrl = getApiUrl('/compromiso-economico', user?.rol);
+      const res = await fetch(`${apiUrl}/compromiso-economico`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
