@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { BACKEND_PRINCIPAL } from '../config/apiConfig';
+
+const BACKEND_PRINCIPAL_ORIGIN = BACKEND_PRINCIPAL.replace(/\/api\/?$/, '');
 
 function WhatsAppPDFSender({ isOpen, onClose, onSend, pdfBlob, studentName, fileName, defaultMessage, initialPhoneNumber }) {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -21,7 +24,7 @@ function WhatsAppPDFSender({ isOpen, onClose, onSend, pdfBlob, studentName, file
   const checkWhatsAppStatus = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://${window.location.hostname}:3001/api/whatsapp/status`, {
+      const response = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/whatsapp/status`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -49,7 +52,7 @@ function WhatsAppPDFSender({ isOpen, onClose, onSend, pdfBlob, studentName, file
         : `formulario_${safeStudentName.replace(/\s+/g, '_')}.pdf`;
       formData.append('pdf', pdfBlob, suggestedName);
 
-      const response = await fetch(`http://${window.location.hostname}:3001/api/upload/upload-pdf`, {
+      const response = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/upload/upload-pdf`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -91,7 +94,7 @@ function WhatsAppPDFSender({ isOpen, onClose, onSend, pdfBlob, studentName, file
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://${window.location.hostname}:3001/api/whatsapp/send-pdf`, {
+      const response = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/whatsapp/send-pdf`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

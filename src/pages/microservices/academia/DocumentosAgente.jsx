@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNotification } from '../../../hooks/useNotification';
 import AuthService from '../../../services/authService';
 import ModoDispositivo from '../../../components/modoDispositivo.jsx';
+import { BACKEND_PRINCIPAL } from '../../../config/apiConfig';
+
+const BACKEND_PRINCIPAL_ORIGIN = BACKEND_PRINCIPAL.replace(/\/api\/?$/, '');
 
 const PASOS_SUBIDA = [
   { id: 1, label: 'Subiendo archivo...', icon: 'fa-upload' },
@@ -43,7 +46,7 @@ function DocumentosAgente() {
       setLoading(true);
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://${window.location.hostname}:3001/api/documentos-agente/listar?activos=${mostrarInactivos ? 'false' : 'true'}`,
+        `${BACKEND_PRINCIPAL_ORIGIN}/api/documentos-agente/listar?activos=${mostrarInactivos ? 'false' : 'true'}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -111,7 +114,7 @@ function DocumentosAgente() {
       formData.append('tipo', tipoDocumento);
 
       const response = await fetch(
-        `http://${window.location.hostname}:3001/api/documentos-agente/subir`,
+        `${BACKEND_PRINCIPAL_ORIGIN}/api/documentos-agente/subir`,
         {
           method: 'POST',
           headers: {
@@ -175,7 +178,7 @@ function DocumentosAgente() {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://${window.location.hostname}:3001/api/documentos-agente/${id}?eliminar_fisico=${eliminarFisico}`,
+        `${BACKEND_PRINCIPAL_ORIGIN}/api/documentos-agente/${id}?eliminar_fisico=${eliminarFisico}`,
         {
           method: 'DELETE',
           headers: {
@@ -206,7 +209,7 @@ function DocumentosAgente() {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://${window.location.hostname}:3001/api/documentos-agente/${doc.id}/regenerar-chunks`,
+        `${BACKEND_PRINCIPAL_ORIGIN}/api/documentos-agente/${doc.id}/regenerar-chunks`,
         { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
       );
       const data = await response.json();
@@ -230,7 +233,7 @@ function DocumentosAgente() {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://${window.location.hostname}:3001/api/documentos-agente/${doc.id}/chunks`,
+        `${BACKEND_PRINCIPAL_ORIGIN}/api/documentos-agente/${doc.id}/chunks`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = await response.json();
@@ -250,7 +253,7 @@ function DocumentosAgente() {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://${window.location.hostname}:3001/api/documentos-agente/${id}/activar`,
+        `${BACKEND_PRINCIPAL_ORIGIN}/api/documentos-agente/${id}/activar`,
         {
           method: 'POST',
           headers: {

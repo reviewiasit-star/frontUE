@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './AgenteInteligenteFloating.css';
 import HistorialChatWhatsAppPanel from './HistorialChatWhatsAppPanel';
+import { BACKEND_PRINCIPAL_ORIGIN } from '../config/apiConfig';
 
 // Clave de historial: distinta para admin vs director/secretaria (LangChain)
 const getStorageKey = (userRole) => {
@@ -176,7 +177,7 @@ function AgenteInteligenteFloating({ user: userProp }) {
 
     try {
       const token = localStorage.getItem('token');
-      const baseUrl = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`;
+      const baseUrl = BACKEND_PRINCIPAL_ORIGIN;
 
       if (useLangChain) {
         // Director y Secretaria: API LangChain
@@ -261,7 +262,7 @@ function AgenteInteligenteFloating({ user: userProp }) {
     try {
       setError('');
       const token = localStorage.getItem('token');
-      const baseUrl = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`;
+      const baseUrl = BACKEND_PRINCIPAL_ORIGIN;
       const resp = await fetch(`${baseUrl}/api/ai-admin-langchain/generar-asistencia`, {
         method: 'POST',
         headers: {

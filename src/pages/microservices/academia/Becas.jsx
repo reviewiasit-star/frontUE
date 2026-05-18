@@ -4,6 +4,9 @@ import NotificationModal from '../../../components/NotificationModal';
 import { useNotification } from '../../../hooks/useNotification';
 import AuthService from '../../../services/authService';
 import ModoDispositivo from '../../../components/modoDispositivo.jsx';
+import { BACKEND_PRINCIPAL } from '../../../config/apiConfig';
+
+const BACKEND_PRINCIPAL_ORIGIN = BACKEND_PRINCIPAL.replace(/\/api\/?$/, '');
 
 function Becas() {
   const [becas, setBecas] = useState([]);
@@ -38,7 +41,7 @@ function Becas() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://${window.location.hostname}:3001/api/becas`, {
+      const response = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/becas`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -87,8 +90,8 @@ function Becas() {
     try {
       const token = localStorage.getItem('token');
       const url = editingBeca
-        ? `http://${window.location.hostname}:3001/api/becas/${editingBeca.id}`
-        : `http://${window.location.hostname}:3001/api/becas`;
+        ? `${BACKEND_PRINCIPAL_ORIGIN}/api/becas/${editingBeca.id}`
+        : `${BACKEND_PRINCIPAL_ORIGIN}/api/becas`;
       const method = editingBeca ? 'PUT' : 'POST';
       const response = await fetch(url, {
         method,
@@ -123,7 +126,7 @@ function Becas() {
     if (!becaToDelete) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://${window.location.hostname}:3001/api/becas/${becaToDelete.id}`, {
+      const response = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/becas/${becaToDelete.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

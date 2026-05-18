@@ -1,6 +1,9 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { syncPendingRequests } from '../utils/offlineFetch';
 import { isOnline, getPendingRequests } from '../utils/offlineStorage';
+import { BACKEND_PRINCIPAL } from '../config/apiConfig';
+
+const BACKEND_PRINCIPAL_ORIGIN = BACKEND_PRINCIPAL.replace(/\/api\/?$/, '');
 
 /**
  * Hook para manejar sincronización offline
@@ -33,7 +36,7 @@ export function useOfflineSync() {
     const pingBackend = async () => {
       try {
         const token = localStorage.getItem('token');
-        const apiUrl = `http://${window.location.hostname}:3001/api/ping`;
+        const apiUrl = `${BACKEND_PRINCIPAL_ORIGIN}/api/ping`;
         
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 segundos timeout

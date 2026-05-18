@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { BACKEND_PRINCIPAL_ORIGIN } from '../../../config/apiConfig';
 
 const STORAGE_KEY = 'ai_admin_chat_history';
 
@@ -61,7 +62,7 @@ function AIAdminChat() {
     setCargando(true);
 
     try {
-      const baseUrl = `http://${window.location.hostname}:3001`;
+      const baseUrl = `${BACKEND_PRINCIPAL_ORIGIN}`;
       const resp = await fetch(`${baseUrl}/api/ai-admin/chat`, {
         method: 'POST',
         headers: {

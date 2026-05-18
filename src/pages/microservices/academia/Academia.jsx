@@ -4,8 +4,9 @@ import NotificationModal from '../../../components/NotificationModal';
 import { useNotification } from '../../../hooks/useNotification';
 import AuthService from '../../../services/authService';
 import ModoDispositivo from '../../../components/modoDispositivo.jsx';
+import { BACKEND_PRINCIPAL } from '../../../config/apiConfig';
 
-const API_URL = `http://${window.location.hostname}:3001/api`;
+const API_URL = BACKEND_PRINCIPAL;
 
 function Academia() {
   // Estados para el menú móvil

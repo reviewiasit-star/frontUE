@@ -9,6 +9,9 @@ import { useNotification } from '../../../hooks/useNotification';
 import { useOfflineSync } from '../../../hooks/useOfflineSync';
 import { getPendingRequests, deletePendingRequest } from '../../../utils/offlineStorage';
 import AuthService from '../../../services/authService';
+import { BACKEND_PRINCIPAL } from '../../../config/apiConfig';
+
+const BACKEND_PRINCIPAL_ORIGIN = BACKEND_PRINCIPAL.replace(/\/api\/?$/, '');
 
 function ListaInscriptos() {
   // Función para ordenar meses cronológicamente
@@ -320,7 +323,7 @@ function ListaInscriptos() {
   const cargarEstadosEstudiante = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://${window.location.hostname}:3001/api/estados-estudiante`, {
+      const response = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/estados-estudiante`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -385,7 +388,7 @@ function ListaInscriptos() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const base = `http://${window.location.hostname}:3001/api/estudiantes`;
+      const base = `${BACKEND_PRINCIPAL_ORIGIN}/api/estudiantes`;
       const url = filtro
         ? `${base}?filtro=${encodeURIComponent(filtro)}&anio=${encodeURIComponent(selectedYear)}&incluir_concluidos=1&incluir_todos_estados=1`
         : `${base}?anio=${encodeURIComponent(selectedYear)}&incluir_concluidos=1&incluir_todos_estados=1`;
@@ -486,7 +489,7 @@ function ListaInscriptos() {
   const cargarEstudiantesBasicos = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://${window.location.hostname}:3001/api/estudiantes/busqueda-basica`, {
+      const response = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/estudiantes/busqueda-basica`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -510,7 +513,7 @@ function ListaInscriptos() {
     const token = localStorage.getItem('token');
 
     // Cargar becas
-    fetch(`http://${window.location.hostname}:3001/api/becas`, {
+    fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/becas`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -523,7 +526,7 @@ function ListaInscriptos() {
       });
 
     // Cargar bloques
-    fetch(`http://${window.location.hostname}:3001/api/bloques`, {
+    fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/bloques`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -541,7 +544,7 @@ function ListaInscriptos() {
   // Cargar todos los niveles al inicio
   useEffect(() => {
     const token = localStorage.getItem('token');
-    fetch(`http://${window.location.hostname}:3001/api/niveles`, {
+    fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/niveles`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -589,7 +592,7 @@ function ListaInscriptos() {
   useEffect(() => {
     if (formPreinscripcion.nivel_id) {
       const token = localStorage.getItem('token');
-      fetch(`http://${window.location.hostname}:3001/api/cursos`, {
+      fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/cursos`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -677,7 +680,7 @@ function ListaInscriptos() {
         // Obtener todos los datos del estudiante desde el backend
         const token = localStorage.getItem('token');
         // Fetch para datos del estudiante
-        const response = await fetch(`http://${window.location.hostname}:3001/api/estudiantes/${inscripto.id}`, {
+        const response = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/estudiantes/${inscripto.id}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -693,7 +696,7 @@ function ListaInscriptos() {
         };
 
         try {
-          const respWA = await fetch(`http://${window.location.hostname}:3001/api/contacto-aviso/${inscripto.id}`, {
+          const respWA = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/contacto-aviso/${inscripto.id}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const dataWA = await respWA.json();
@@ -868,7 +871,7 @@ function ListaInscriptos() {
 
       try {
         const token = localStorage.getItem('token');
-        const url = 'http://' + window.location.hostname + ':3001/api/estudiantes';
+        const url = `${BACKEND_PRINCIPAL}/estudiantes`;
         const response = await fetch(url, {
           method: 'POST',
           headers: {
@@ -985,7 +988,7 @@ function ListaInscriptos() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://${window.location.hostname}:3001/api/estudiantes/buscar-padre-por-ci/${ci}`, {
+      const response = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/estudiantes/buscar-padre-por-ci/${ci}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -1070,7 +1073,7 @@ function ListaInscriptos() {
     if (pendingSubmit && editingInscripto) {
       try {
         const token = localStorage.getItem('token');
-        const url = `http://${window.location.hostname}:3001/api/estudiantes/${editingInscripto.id}`;
+        const url = `${BACKEND_PRINCIPAL_ORIGIN}/api/estudiantes/${editingInscripto.id}`;
         const response = await fetch(url, {
           method: 'PUT',
           headers: {
@@ -1130,7 +1133,7 @@ function ListaInscriptos() {
     }
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://${window.location.hostname}:3001/api/inscripciones/retirar`, {
+      const response = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/inscripciones/retirar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1162,7 +1165,7 @@ function ListaInscriptos() {
     if (inscriptoToDelete) {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://${window.location.hostname}:3001/api/estudiantes/${inscriptoToDelete}`, {
+        const response = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/estudiantes/${inscriptoToDelete}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -1244,7 +1247,7 @@ function ListaInscriptos() {
       const gestionObjetivo = parseInt(formPreinscripcion.gestion_academica, 10) || new Date().getFullYear();
 
       const response = await fetch(
-        `http://${window.location.hostname}:3001/api/inscripciones/estado-actual/${estudiante.id}?anio=${gestionObjetivo}`,
+        `${BACKEND_PRINCIPAL_ORIGIN}/api/inscripciones/estado-actual/${estudiante.id}?anio=${gestionObjetivo}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -1313,7 +1316,7 @@ function ListaInscriptos() {
   const cargarSugerenciasAgente = async (estudianteId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://${window.location.hostname}:3001/api/ai-admin/sugerencias-preinscripcion/${estudianteId}`, {
+      const response = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/ai-admin/sugerencias-preinscripcion/${estudianteId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -1479,7 +1482,7 @@ function ListaInscriptos() {
 
     try {
       const token = localStorage.getItem('token');
-      const url = 'http://' + window.location.hostname + ':3001/api/inscripciones';
+      const url = `${BACKEND_PRINCIPAL}/inscripciones`;
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -1569,7 +1572,7 @@ function ListaInscriptos() {
   const generarPDFFormularioInscripcionPorGestion = async (estudianteId, gestion) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://${window.location.hostname}:3001/api/estudiantes/${estudianteId}?anio=${gestion}&incluir_concluidos=1`, {
+      const response = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/estudiantes/${estudianteId}?anio=${gestion}&incluir_concluidos=1`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       let data = null;
@@ -1630,7 +1633,7 @@ function ListaInscriptos() {
           !data.nombre_autorizado1 && !data.telefono_autorizado1 &&
           !data.seguro_medico && !data.alergias && !data.vacunas;
         if (sinFamilia) {
-          const respPerfil = await fetch(`http://${window.location.hostname}:3001/api/estudiantes/${estudianteId}`, {
+          const respPerfil = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/estudiantes/${estudianteId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (respPerfil.ok) {
@@ -1923,7 +1926,7 @@ function ListaInscriptos() {
     try {
       // Obtener todos los datos del estudiante desde el backend
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://${window.location.hostname}:3001/api/estudiantes/${inscripto.id}?anio=${selectedYear}&incluir_concluidos=1`, {
+      const response = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/estudiantes/${inscripto.id}?anio=${selectedYear}&incluir_concluidos=1`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -1944,7 +1947,7 @@ function ListaInscriptos() {
       if (!finalNivel && !finalCurso && !finalBloque) {
         try {
           const respIns = await fetch(
-            `http://${window.location.hostname}:3001/api/inscripciones/estado-actual/${inscripto.id}?anio=${gestionTexto}`,
+            `${BACKEND_PRINCIPAL_ORIGIN}/api/inscripciones/estado-actual/${inscripto.id}?anio=${gestionTexto}`,
             { headers: { 'Authorization': `Bearer ${token}` } }
           );
           if (respIns.ok) {
@@ -2273,7 +2276,7 @@ function ListaInscriptos() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://${window.location.hostname}:3001/api/inscripciones/eliminar-por-anio/2026`, {
+      const response = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/inscripciones/eliminar-por-anio/2026`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

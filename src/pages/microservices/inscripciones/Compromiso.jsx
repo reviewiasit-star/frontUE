@@ -52,6 +52,11 @@ const Compromiso = () => {
     url: null,
     nombreArchivo: 'comprobante.pdf'
   });
+  const [confirmEliminarComprobante, setConfirmEliminarComprobante] = useState({
+    isOpen: false,
+    pagoId: null,
+    origenRegistro: 'pagos_realizados'
+  });
   // Agregar estados para mes, año y forma de pago
   const [mesPago, setMesPago] = useState('');
   const [formaPago, setFormaPago] = useState('Efectivo');
@@ -517,9 +522,19 @@ const Compromiso = () => {
             const pagosConUrl = Array.isArray(pagos) ? pagos.map(pago => {
               // Crear un nuevo objeto en lugar de mutar el original
               const pagoConUrl = { ...pago };
-              if (pago.pdf_firmado && !pago.comprobante_url) {
-                // Construir la URL del comprobante firmado para visualización
-                pagoConUrl.comprobante_url = `${apiUrl}/comprobantes/view-comprobante/${pago.id}/firmado`;
+              pagoConUrl.origen_registro = pago.origen_registro || 'pagos_realizados';
+              // Si existe comprobante firmado, SIEMPRE forzar la URL al firmado del pago actual
+              // para evitar arrastrar URLs antiguas (ej: plan de pagos u otros archivos).
+              if (pago.pdf_firmado) {
+                const version = encodeURIComponent(
+                  pago.fecha_subida_firmado || pago.pdf_firmado || Date.now().toString()
+                );
+                pagoConUrl.comprobante_url = `${apiUrl}/comprobantes/view-comprobante/${pago.id}/firmado?origen=${encodeURIComponent(pagoConUrl.origen_registro)}&v=${version}`;
+              } else {
+                pagoConUrl.comprobante_url = null;
+              }
+              if (pago.pdf_firmado) {
+                pagoConUrl.comprobante_nombre = pago.pdf_firmado;
               }
               return pagoConUrl;
             }) : [];
@@ -1561,6 +1576,7 @@ const Compromiso = () => {
       const formData = new FormData();
       formData.append('comprobante', archivo);
       formData.append('pago_id', String(pago.id));
+      formData.append('origen_registro', String(pago.origen_registro || 'pagos_realizados'));
       // Si se proporciona el ID del comprobante OCR, agregarlo para rastrear qué comprobante fue usado
       if (idOcrComprobante) {
         formData.append('id_ocr_comprobante', String(idOcrComprobante));
@@ -1613,7 +1629,10 @@ const Compromiso = () => {
             console.error('⚠️ Error al recargar después de subir comprobante:', reloadError);
           }
         }
-        showSuccess('Comprobante subido exitosamente');
+        const archivoServidor = result.fileName ? `Guardado como: ${result.fileName}` : '';
+        const archivoOriginal = archivo?.name ? `Archivo subido: ${archivo.name}` : '';
+        const detalle = [archivoOriginal, archivoServidor].filter(Boolean).join(' | ');
+        showSuccess(detalle ? `Comprobante subido exitosamente. ${detalle}` : 'Comprobante subido exitosamente');
       } else {
         console.error('❌ Error en la respuesta:', result);
         showError(result.error || 'Error al subir el comprobante');
@@ -1642,10 +1661,11 @@ const Compromiso = () => {
     });
   };
 
-  const handleDescargarComprobante = async (comprobanteUrl) => {
+  const handleDescargarComprobante = async (comprobanteUrl, nombreArchivo = 'comprobante.pdf') => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(comprobanteUrl, {
+        cache: 'no-store',
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -1654,7 +1674,7 @@ const Compromiso = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'comprobante.pdf';
+      a.download = nombreArchivo || 'comprobante.pdf';
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -1665,16 +1685,34 @@ const Compromiso = () => {
     }
   };
 
-  const handleEliminarComprobante = async (pagoId) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este comprobante?')) {
-      return;
-    }
+  const confirmarEliminarComprobante = (pagoRef) => {
+    const pago = typeof pagoRef === 'object'
+      ? pagoRef
+      : pagos.find(p => String(p.id) === String(pagoRef));
+    setConfirmEliminarComprobante({
+      isOpen: true,
+      pagoId: pago?.id || pagoRef,
+      origenRegistro: pago?.origen_registro || 'pagos_realizados'
+    });
+  };
 
+  const cancelarEliminarComprobante = () => {
+    setConfirmEliminarComprobante({
+      isOpen: false,
+      pagoId: null,
+      origenRegistro: 'pagos_realizados'
+    });
+  };
+
+  const handleEliminarComprobante = async () => {
+    const pagoId = confirmEliminarComprobante.pagoId;
+    const origenRegistro = confirmEliminarComprobante.origenRegistro || 'pagos_realizados';
+    if (!pagoId) return;
     try {
       const token = localStorage.getItem('token');
       const user = AuthService.getUser();
       const apiUrl = getApiUrl('/comprobantes', user?.rol);
-      const response = await fetch(`${apiUrl}/comprobantes/eliminar/${pagoId}`, {
+      const response = await fetch(`${apiUrl}/comprobantes/eliminar/${pagoId}?origen=${encodeURIComponent(origenRegistro)}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -1685,6 +1723,7 @@ const Compromiso = () => {
 
       if (response.ok && result.success) {
         showSuccess('Comprobante eliminado exitosamente');
+        cancelarEliminarComprobante();
         // Recargar los pagos
         if (inscripcionSeleccionada && inscripcionSeleccionada.id) {
           cargarCompromiso(inscripcionSeleccionada.id);
@@ -2419,12 +2458,40 @@ const Compromiso = () => {
         handleSubirComprobante={handleSubirComprobante}
         handleDescargarComprobante={handleDescargarComprobante}
         handleVerComprobante={handleVerComprobante}
-        handleEliminarComprobante={handleEliminarComprobante}
+        handleEliminarComprobante={confirmarEliminarComprobante}
         formatearFecha={formatearFecha}
         formatearMonto={formatearMonto}
         obtenerMesDeFecha={obtenerMesDeFecha}
         obtenerAnioDeFecha={obtenerAnioDeFecha}
       />
+
+      {/* Modal de confirmación para eliminar comprobante */}
+      {confirmEliminarComprobante.isOpen && (
+        <div className="modal fade show" style={{ display: 'block', background: 'rgba(0,0,0,0.5)' }} tabIndex="-1">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  <i className="fas fa-exclamation-triangle text-warning me-2"></i>
+                  Confirmar eliminación
+                </h5>
+                <button type="button" className="btn-close" onClick={cancelarEliminarComprobante}></button>
+              </div>
+              <div className="modal-body">
+                ¿Estás seguro de que quieres eliminar este comprobante?
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={cancelarEliminarComprobante}>
+                  Cancelar
+                </button>
+                <button type="button" className="btn btn-danger" onClick={handleEliminarComprobante}>
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Modal de visualización de comprobante */}
       <ModalVisualizarComprobante

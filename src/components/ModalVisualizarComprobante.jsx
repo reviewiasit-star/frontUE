@@ -200,7 +200,7 @@ const ModalVisualizarComprobante = ({
           {loading && (
             <div className="text-center py-5">
               <i className="fas fa-spinner fa-spin fa-2x text-primary mb-3"></i>
-              <div>Cargando imagen...</div>
+              <div>Cargando comprobante...</div>
             </div>
           )}
 
@@ -228,8 +228,8 @@ const ModalVisualizarComprobante = ({
 
           {!loading && !error && fileUrl && (
             <>
-              {/* Mostrar siempre como imagen primero (igual que Vista previa del comprobante) */}
-              {(fileType && fileType.startsWith('image/')) || (blob && blob.size < 500000) ? (
+              {/* Mostrar como imagen solo cuando realmente el MIME es image/* */}
+              {fileType && fileType.startsWith('image/') ? (
                 <img
                   src={fileUrl}
                   alt="Comprobante"

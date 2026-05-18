@@ -4,6 +4,9 @@ import NotificationModal from '../../../components/NotificationModal';
 import { useNotification } from '../../../hooks/useNotification';
 import AuthService from '../../../services/authService';
 import ModoDispositivo from '../../../components/modoDispositivo.jsx';
+import { BACKEND_PRINCIPAL } from '../../../config/apiConfig';
+
+const BACKEND_PRINCIPAL_ORIGIN = BACKEND_PRINCIPAL.replace(/\/api\/?$/, '');
 
 function Usuarios() {
   const [usuarios, setUsuarios] = useState([]);
@@ -31,7 +34,7 @@ function Usuarios() {
 
   const fetchRoles = () => {
     const token = localStorage.getItem('token');
-    fetch(`http://${window.location.hostname}:3001/api/roles`, {
+    fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/roles`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -57,7 +60,7 @@ function Usuarios() {
   const fetchUsuarios = () => {
     setLoading(true);
     const token = localStorage.getItem('token');
-    fetch(`http://${window.location.hostname}:3001/api/usuarios`, {
+    fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/usuarios`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -112,7 +115,7 @@ function Usuarios() {
     if (modalType === 'crear') {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://${window.location.hostname}:3001/api/usuarios`, {
+        const response = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/usuarios`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -141,7 +144,7 @@ function Usuarios() {
     if (pendingSubmit && modalType === 'editar') {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://${window.location.hostname}:3001/api/usuarios/${editId}`, {
+        const response = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/usuarios/${editId}`, {
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json',
@@ -182,7 +185,7 @@ function Usuarios() {
     if (!userToDelete) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://${window.location.hostname}:3001/api/usuarios/${userToDelete}`, {
+      const response = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/usuarios/${userToDelete}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -422,7 +425,7 @@ function Usuarios() {
                     try {
                       setWiping(true);
                       const token = localStorage.getItem('token');
-                      const resp = await fetch(`http://${window.location.hostname}:3001/api/admin/limpiar-datos`, {
+                      const resp = await fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/admin/limpiar-datos`, {
                         method: 'POST',
                         headers: {
                           'Authorization': `Bearer ${token}`

@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthService from '../../../services/authService';
 import ModoDispositivo from '../../../components/modoDispositivo';
+import { BACKEND_PRINCIPAL } from '../../../config/apiConfig';
+
+const BACKEND_PRINCIPAL_ORIGIN = BACKEND_PRINCIPAL.replace(/\/api\/?$/, '');
 
 function Estudiantes() {
   const [estudiantes, setEstudiantes] = useState([]);
@@ -26,7 +29,7 @@ function Estudiantes() {
   const fetchEstudiantes = async () => {
     try {
       const token = localStorage.getItem('token');
-      const url = `http://${window.location.hostname}:3001/api/estudiantes?anio=${encodeURIComponent(selectedYear)}&incluir_concluidos=1`;
+      const url = `${BACKEND_PRINCIPAL_ORIGIN}/api/estudiantes?anio=${encodeURIComponent(selectedYear)}&incluir_concluidos=1`;
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`

@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { getApiUrl } from '../config/apiConfig';
+import { getApiUrl, BACKEND_PRINCIPAL } from '../config/apiConfig';
+
+const BACKEND_PRINCIPAL_ORIGIN = BACKEND_PRINCIPAL.replace(/\/api\/?$/, '');
 import AuthService from '../services/authService';
 import logo from '../assets/img/logo.jpg';
 
@@ -410,9 +412,9 @@ function PagosMorosidadPanel({
           : {};
 
         const [nivelesRes, cursosRes, bloquesRes] = await Promise.all([
-          fetch(`http://${window.location.hostname}:3001/api/niveles`, { headers }),
-          fetch(`http://${window.location.hostname}:3001/api/cursos`, { headers }),
-          fetch(`http://${window.location.hostname}:3001/api/bloques`)
+          fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/niveles`, { headers }),
+          fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/cursos`, { headers }),
+          fetch(`${BACKEND_PRINCIPAL_ORIGIN}/api/bloques`)
         ]);
 
         const [nivelesData, cursosData, bloquesData] = await Promise.all([

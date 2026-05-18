@@ -1,6 +1,6 @@
-import { getApiUrl, checkAllServices } from '../config/apiConfig';
+import { getApiUrl, checkAllServices, BACKEND_PRINCIPAL, BACKEND_CAJAS } from '../config/apiConfig';
 
-const API_URL = `http://${window.location.hostname}:3001/api`;
+const API_URL = BACKEND_PRINCIPAL;
 
 class AuthService {
   // Verificar disponibilidad de servicios
@@ -82,8 +82,6 @@ class AuthService {
   // Login con verificación de servicios
   static async login(credentials) {
     try {
-      const BACKEND_CAJAS = `http://${window.location.hostname}:3002/api`;
-      
       // Intentar login en ambos backends en paralelo
       const [responsePrincipal, responseCajas] = await Promise.allSettled([
         fetch(`${API_URL}/auth/login`, {

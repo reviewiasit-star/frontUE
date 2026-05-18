@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import NotificationModal from '../../../components/NotificationModal';
 import { useNotification } from '../../../hooks/useNotification';
 
-const API_URL = `http://${window.location.hostname}:3001/api`;
+import { BACKEND_PRINCIPAL as API_URL } from '../../../config/apiConfig';
 
 function ServiciosAdmin() {
   const [servicios, setServicios] = useState([]);

@@ -575,7 +575,7 @@ const InformacionEstudianteModal = ({
                           <tbody>
                             {pagosFiltrados.length > 0 ? (
                               pagosFiltrados.map((pago, index) => (
-                                <tr key={index}>
+                                <tr key={`${pago.origen_registro || 'pagos_realizados'}-${pago.id}-${index}`}>
                                   <td>{formatearFecha(pago.fecha_pago)}</td>
                                   <td>
                                     <span className={`badge ${etiquetaTipoPago(pago.tipo_pago).className}`}>
@@ -587,17 +587,20 @@ const InformacionEstudianteModal = ({
                                   <td className="fw-bold">Bs {formatearMonto(pago.monto)}</td>
                                   <td>{pago.observacion || '-'}</td>
                                   <td>
-                                    {pago.comprobante_url ? (
+                                    {pago.pdf_firmado && pago.comprobante_url ? (
                                       <div>
                                         <div className="alert alert-success p-1 mb-1 text-center">
                                           <i className="fas fa-check-circle me-1"></i> 
                                           <strong>Comprobante subido</strong>
                                         </div>
+                                        <div className="small text-muted text-truncate mb-1" title={pago.comprobante_nombre || `comprobante-${pago.id}.pdf`}>
+                                          {pago.comprobante_nombre || `comprobante-${pago.id}.pdf`}
+                                        </div>
                                         <div className="btn-group btn-group-sm w-100">
                                           {handleVerComprobante && (
                                             <button 
                                               className="btn btn-outline-info btn-sm"
-                                              onClick={() => handleVerComprobante(pago.comprobante_url, `comprobante-${pago.id}.pdf`)}
+                                              onClick={() => handleVerComprobante(pago.comprobante_url, pago.comprobante_nombre || `comprobante-${pago.id}.pdf`)}
                                               title="Ver comprobante"
                                             >
                                               <i className="fas fa-eye"></i>
@@ -605,14 +608,14 @@ const InformacionEstudianteModal = ({
                                           )}
                                           <button 
                                             className="btn btn-outline-primary btn-sm"
-                                            onClick={() => handleDescargarComprobante(pago.comprobante_url)}
+                                            onClick={() => handleDescargarComprobante(pago.comprobante_url, pago.comprobante_nombre || `comprobante-${pago.id}.pdf`)}
                                             title="Descargar comprobante"
                                           >
                                             <i className="fas fa-download"></i>
                                           </button>
                                           <button 
                                             className="btn btn-outline-danger btn-sm"
-                                            onClick={() => handleEliminarComprobante(pago.id)}
+                                            onClick={() => handleEliminarComprobante(pago)}
                                             title="Eliminar comprobante"
                                           >
                                             <i className="fas fa-trash"></i>
@@ -621,11 +624,11 @@ const InformacionEstudianteModal = ({
                                       </div>
                                     ) : (
                                       <div>
-                                        <label htmlFor={`comprobante-${pago.id}`} className="btn btn-success btn-sm mb-1 w-100">
+                                        <label htmlFor={`comprobante-${pago.origen_registro || 'pagos_realizados'}-${pago.id}`} className="btn btn-success btn-sm mb-1 w-100">
                                           <i className="fas fa-camera me-1"></i> Tomar foto
                                         </label>
                                         <input
-                                          id={`comprobante-${pago.id}`}
+                                          id={`comprobante-${pago.origen_registro || 'pagos_realizados'}-${pago.id}`}
                                           type="file"
                                           accept="image/*"
                                           capture="environment"
@@ -636,11 +639,11 @@ const InformacionEstudianteModal = ({
                                             }
                                           }}
                                         />
-                                        <label htmlFor={`archivo-${pago.id}`} className="btn btn-outline-primary btn-sm mb-1 w-100">
+                                        <label htmlFor={`archivo-${pago.origen_registro || 'pagos_realizados'}-${pago.id}`} className="btn btn-outline-primary btn-sm mb-1 w-100">
                                           <i className="fas fa-file-upload me-1"></i> Subir archivo
                                         </label>
                                         <input
-                                          id={`archivo-${pago.id}`}
+                                          id={`archivo-${pago.origen_registro || 'pagos_realizados'}-${pago.id}`}
                                           type="file"
                                           accept=".jpg,.jpeg,.png,.pdf"
                                           className="d-none"
