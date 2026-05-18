@@ -1,41 +1,49 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNotification } from '../../../hooks/useNotification';
-import AuthService from '../../../services/authService';
-import ModoDispositivo from '../../../components/modoDispositivo.jsx';
-import { BACKEND_PRINCIPAL } from '../../../config/apiConfig';
+import React, { useState, useEffect, useRef } from "react";
+import { useNotification } from "../../../hooks/useNotification";
+import AuthService from "../../../services/authService";
+import ModoDispositivo from "../../../components/modoDispositivo.jsx";
+import { BACKEND_PRINCIPAL } from "../../../config/apiConfig";
 
-const BACKEND_PRINCIPAL_ORIGIN = BACKEND_PRINCIPAL.replace(/\/api\/?$/, '');
+const BACKEND_PRINCIPAL_ORIGIN = BACKEND_PRINCIPAL.replace(/\/api\/?$/, "");
 
 const PASOS_SUBIDA = [
-  { id: 1, label: 'Subiendo archivo...', icon: 'fa-upload' },
-  { id: 2, label: 'Extrayendo texto del documento...', icon: 'fa-file-alt' },
-  { id: 3, label: 'Generando chunks para búsqueda...', icon: 'fa-puzzle-piece' },
-  { id: 4, label: 'Actualizando agente inteligente...', icon: 'fa-robot' }
+  { id: 1, label: "Subiendo archivo...", icon: "fa-upload" },
+  { id: 2, label: "Extrayendo texto del documento...", icon: "fa-file-alt" },
+  {
+    id: 3,
+    label: "Generando chunks para búsqueda...",
+    icon: "fa-puzzle-piece",
+  },
+  { id: 4, label: "Actualizando agente inteligente...", icon: "fa-robot" },
 ];
 
 function DocumentosAgente() {
   const [documentos, setDocumentos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
   const [pasoActual, setPasoActual] = useState(1);
   const [archivoSeleccionado, setArchivoSeleccionado] = useState(null);
-  const [tipoDocumento, setTipoDocumento] = useState('otros');
+  const [tipoDocumento, setTipoDocumento] = useState("otros");
   const [mostrarInactivos, setMostrarInactivos] = useState(false);
   const [showModalChunks, setShowModalChunks] = useState(false);
   const [chunks, setChunks] = useState([]);
-  const [documentoNombreChunks, setDocumentoNombreChunks] = useState('');
+  const [documentoNombreChunks, setDocumentoNombreChunks] = useState("");
   const [loadingChunks, setLoadingChunks] = useState(false);
   const [chunkSeleccionado, setChunkSeleccionado] = useState(null);
   const [showConfirmDeleteModal, setShowConfirmDeleteModal] = useState(false);
-  const [confirmDeleteData, setConfirmDeleteData] = useState({ id: null, eliminarFisico: false });
+  const [confirmDeleteData, setConfirmDeleteData] = useState({
+    id: null,
+    eliminarFisico: false,
+  });
   const [eliminandoDocumento, setEliminandoDocumento] = useState(false);
   const subiendoRef = useRef(false);
   const fileInputRef = useRef(null);
   const pasoIntervalRef = useRef(null);
 
-  const { notification, showSuccess, showError, hideNotification } = useNotification();
+  const { notification, showSuccess, showError, hideNotification } =
+    useNotification();
 
   useEffect(() => {
     cargarDocumentos();
@@ -44,26 +52,26 @@ function DocumentosAgente() {
   const cargarDocumentos = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const response = await fetch(
-        `${BACKEND_PRINCIPAL_ORIGIN}/api/documentos-agente/listar?activos=${mostrarInactivos ? 'false' : 'true'}`,
+        `${BACKEND_PRINCIPAL_ORIGIN}/api/documentos-agente/listar?activos=${mostrarInactivos ? "false" : "true"}`,
         {
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
+            Authorization: `Bearer ${token}`,
+          },
+        },
       );
 
       const data = await response.json();
       if (response.ok && data.ok) {
         setDocumentos(data.documentos || []);
       } else {
-        setError(data.message || 'Error al cargar los documentos');
-        showError(data.message || 'Error al cargar los documentos');
+        setError(data.message || "Error al cargar los documentos");
+        showError(data.message || "Error al cargar los documentos");
       }
     } catch (err) {
-      setError('Error de conexión');
-      showError('Error de conexión al servidor');
+      setError("Error de conexión");
+      showError("Error de conexión al servidor");
     } finally {
       setLoading(false);
     }
@@ -73,17 +81,17 @@ function DocumentosAgente() {
     const file = e.target.files[0];
     if (file) {
       // Validar tipo de archivo
-      const extension = file.name.split('.').pop().toLowerCase();
-      const tiposPermitidos = ['pdf', 'docx', 'doc', 'txt'];
-      
+      const extension = file.name.split(".").pop().toLowerCase();
+      const tiposPermitidos = ["pdf", "docx", "doc", "txt"];
+
       if (!tiposPermitidos.includes(extension)) {
-        showError('Solo se permiten archivos PDF, Word (DOCX) o TXT');
+        showError("Solo se permiten archivos PDF, Word (DOCX) o TXT");
         return;
       }
 
-      // Validar tamaño (10MB máximo)
-      if (file.size > 10 * 1024 * 1024) {
-        showError('El archivo no puede ser mayor a 10MB');
+      // Validar tamaño (50MB máximo)
+      if (file.size > 50 * 1024 * 1024) {
+        showError("El archivo no puede ser mayor a 50MB");
         return;
       }
 
@@ -93,7 +101,7 @@ function DocumentosAgente() {
 
   const handleSubir = async () => {
     if (!archivoSeleccionado) {
-      showError('Por favor selecciona un archivo');
+      showError("Por favor selecciona un archivo");
       return;
     }
     // Evitar doble envío (el setState es asíncrono, usamos ref)
@@ -102,50 +110,63 @@ function DocumentosAgente() {
     setSubiendo(true);
     setPasoActual(1);
 
-    // Avanzar pasos cada 2.5 segundos para mostrar progreso visual
+    // El paso 1 y 2 avanzan instantáneo (subida + guardado en BD).
+    // Los pasos 3 y 4 (chunks + embeddings) ahora van en segundo plano en el servidor.
     pasoIntervalRef.current = setInterval(() => {
-      setPasoActual((prev) => (prev < 4 ? prev + 1 : prev));
-    }, 2500);
+      setPasoActual((prev) => (prev < 2 ? prev + 1 : prev)); // Solo hasta paso 2 mientras espera
+    }, 1200);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const formData = new FormData();
-      formData.append('documento', archivoSeleccionado);
-      formData.append('tipo', tipoDocumento);
+      formData.append("documento", archivoSeleccionado);
+      formData.append("tipo", tipoDocumento);
 
       const response = await fetch(
         `${BACKEND_PRINCIPAL_ORIGIN}/api/documentos-agente/subir`,
         {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          body: formData
-        }
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        },
       );
 
       const data = await response.json();
       if (response.ok && data.ok) {
-        showSuccess('Documento subido exitosamente. El agente inteligente ha sido actualizado.');
+        // Avanzar visualmente al paso 3 y 4 para mostrar que el servidor trabaja en background
+        clearInterval(pasoIntervalRef.current);
+        pasoIntervalRef.current = null;
+        setPasoActual(3);
+        await new Promise((r) => setTimeout(r, 600));
+        setPasoActual(4);
+
+        const esBG = data.procesando_en_background;
+        showSuccess(
+          esBG
+            ? `✅ Documento guardado. Los fragmentos e índices se están generando en segundo plano en el servidor. El agente ya puede responder preguntas y mejora a medida que se procesan los fragmentos.`
+            : "✅ Documento subido y procesado correctamente. El agente ha sido actualizado.",
+        );
         setShowModal(false);
         setArchivoSeleccionado(null);
-        setTipoDocumento('otros');
-        if (fileInputRef.current) fileInputRef.current.value = '';
+        setTipoDocumento("otros");
+        if (fileInputRef.current) fileInputRef.current.value = "";
         cargarDocumentos();
       } else {
-        const msg = data.message || 'Error al subir el documento';
-        const esDuplicado = msg.includes('Ya existe un documento activo');
+        const msg = data.message || "Error al subir el documento";
+        const esDuplicado = msg.includes("Ya existe un documento activo");
         if (esDuplicado) {
           showError(msg);
           setShowModal(false);
-          cargarDocumentos(); // Actualizar lista por si ya estaba registrado
+          cargarDocumentos();
         } else {
           showError(msg);
         }
       }
     } catch (err) {
-      console.error('Error:', err);
-      showError('Error de conexión al subir el documento');
+      console.error("Error:", err);
+      showError(
+        "Error de conexión al subir el documento. Verifica tu conexión e inténtalo de nuevo.",
+      );
     } finally {
       if (pasoIntervalRef.current) {
         clearInterval(pasoIntervalRef.current);
@@ -160,8 +181,8 @@ function DocumentosAgente() {
     if (!subiendo) {
       setShowModal(false);
       setArchivoSeleccionado(null);
-      setTipoDocumento('otros');
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      setTipoDocumento("otros");
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -176,28 +197,28 @@ function DocumentosAgente() {
     setEliminandoDocumento(true);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const response = await fetch(
         `${BACKEND_PRINCIPAL_ORIGIN}/api/documentos-agente/${id}?eliminar_fisico=${eliminarFisico}`,
         {
-          method: 'DELETE',
+          method: "DELETE",
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
+            Authorization: `Bearer ${token}`,
+          },
+        },
       );
 
       const data = await response.json();
       if (response.ok && data.ok) {
-        showSuccess(data.message || 'Documento eliminado exitosamente');
+        showSuccess(data.message || "Documento eliminado exitosamente");
         setShowConfirmDeleteModal(false);
         cargarDocumentos();
       } else {
-        showError(data.message || 'Error al eliminar el documento');
+        showError(data.message || "Error al eliminar el documento");
       }
     } catch (err) {
-      console.error('Error:', err);
-      showError('Error de conexión al eliminar el documento');
+      console.error("Error:", err);
+      showError("Error de conexión al eliminar el documento");
     } finally {
       setEliminandoDocumento(false);
       setConfirmDeleteData({ id: null, eliminarFisico: false });
@@ -205,22 +226,27 @@ function DocumentosAgente() {
   };
 
   const handleRegenerarChunks = async (doc) => {
-    if (!window.confirm(`¿Regenerar chunks de "${doc.nombre}"? Esto actualizará los fragmentos con la configuración mejorada (menos cortes).`)) return;
+    if (
+      !window.confirm(
+        `¿Regenerar chunks de "${doc.nombre}"? Esto actualizará los fragmentos con la configuración mejorada (menos cortes).`,
+      )
+    )
+      return;
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const response = await fetch(
         `${BACKEND_PRINCIPAL_ORIGIN}/api/documentos-agente/${doc.id}/regenerar-chunks`,
-        { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
+        { method: "POST", headers: { Authorization: `Bearer ${token}` } },
       );
       const data = await response.json();
       if (response.ok && data.ok) {
-        showSuccess(data.message || 'Chunks regenerados correctamente');
+        showSuccess(data.message || "Chunks regenerados correctamente");
         cargarDocumentos();
       } else {
-        showError(data.message || 'Error al regenerar chunks');
+        showError(data.message || "Error al regenerar chunks");
       }
     } catch (err) {
-      showError('Error de conexión al regenerar chunks');
+      showError("Error de conexión al regenerar chunks");
     }
   };
 
@@ -231,19 +257,19 @@ function DocumentosAgente() {
     setLoadingChunks(true);
     setChunks([]);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const response = await fetch(
         `${BACKEND_PRINCIPAL_ORIGIN}/api/documentos-agente/${doc.id}/chunks`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       const data = await response.json();
       if (response.ok && data.ok) {
         setChunks(data.chunks || []);
       } else {
-        showError(data.message || 'Error al cargar los chunks');
+        showError(data.message || "Error al cargar los chunks");
       }
     } catch (err) {
-      showError('Error de conexión al cargar los chunks');
+      showError("Error de conexión al cargar los chunks");
     } finally {
       setLoadingChunks(false);
     }
@@ -251,45 +277,45 @@ function DocumentosAgente() {
 
   const handleActivar = async (id) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const response = await fetch(
         `${BACKEND_PRINCIPAL_ORIGIN}/api/documentos-agente/${id}/activar`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
+            Authorization: `Bearer ${token}`,
+          },
+        },
       );
 
       const data = await response.json();
       if (response.ok && data.ok) {
-        showSuccess('Documento activado exitosamente');
+        showSuccess("Documento activado exitosamente");
         cargarDocumentos();
       } else {
-        showError(data.message || 'Error al activar el documento');
+        showError(data.message || "Error al activar el documento");
       }
     } catch (err) {
-      console.error('Error:', err);
-      showError('Error de conexión al activar el documento');
+      console.error("Error:", err);
+      showError("Error de conexión al activar el documento");
     }
   };
 
   const formatearTamanio = (bytes) => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(2) + " MB";
   };
 
   const formatearFecha = (fecha) => {
-    if (!fecha) return '-';
-    return new Date(fecha).toLocaleString('es-BO');
+    if (!fecha) return "-";
+    return new Date(fecha).toLocaleString("es-BO");
   };
 
   return (
     <div className="container-fluid py-4">
       <ModoDispositivo />
-      
+
       <div className="card shadow-sm">
         <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
           <h4 className="mb-0">Gestión de Documentos del Agente Inteligente</h4>
@@ -338,9 +364,12 @@ function DocumentosAgente() {
           ) : documentos.length === 0 ? (
             <div className="alert alert-info">
               <i className="fas fa-info-circle me-2"></i>
-              No hay documentos {mostrarInactivos ? 'inactivos' : 'activos'}.
+              No hay documentos {mostrarInactivos ? "inactivos" : "activos"}.
               {!mostrarInactivos && (
-                <span> Sube un documento para que el agente inteligente pueda usarlo.</span>
+                <span>
+                  {" "}
+                  Sube un documento para que el agente inteligente pueda usarlo.
+                </span>
               )}
             </div>
           ) : (
@@ -363,7 +392,10 @@ function DocumentosAgente() {
                       <td>
                         <strong>{doc.nombre}</strong>
                         {doc.preview && (
-                          <div className="text-muted small mt-1" style={{ maxWidth: '300px' }}>
+                          <div
+                            className="text-muted small mt-1"
+                            style={{ maxWidth: "300px" }}
+                          >
                             {doc.preview}
                           </div>
                         )}
@@ -441,7 +473,10 @@ function DocumentosAgente() {
 
       {/* Modal para subir documento */}
       {showModal && (
-        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div
+          className="modal show d-block"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
@@ -460,7 +495,7 @@ function DocumentosAgente() {
                       <span className="spinner-border spinner-border-sm text-primary me-2"></span>
                       <strong>Registrando documento...</strong>
                     </div>
-                    <div className="progress mb-2" style={{ height: '8px' }}>
+                    <div className="progress mb-2" style={{ height: "8px" }}>
                       <div
                         className="progress-bar progress-bar-striped progress-bar-animated"
                         role="progressbar"
@@ -472,8 +507,14 @@ function DocumentosAgente() {
                     </div>
                     <div className="small text-muted">
                       {PASOS_SUBIDA.map((p) => (
-                        <div key={p.id} className={`py-1 ${pasoActual >= p.id ? 'text-primary fw-medium' : 'text-secondary'}`}>
-                          <i className={`fas ${p.icon} me-2`} style={{ width: '18px' }}></i>
+                        <div
+                          key={p.id}
+                          className={`py-1 ${pasoActual >= p.id ? "text-primary fw-medium" : "text-secondary"}`}
+                        >
+                          <i
+                            className={`fas ${p.icon} me-2`}
+                            style={{ width: "18px" }}
+                          ></i>
                           {p.label}
                         </div>
                       ))}
@@ -494,12 +535,15 @@ function DocumentosAgente() {
                     <option value="otros">Otros</option>
                   </select>
                   <small className="form-text text-muted">
-                    El tipo ayuda al agente a clasificar y buscar información relevante.
+                    El tipo ayuda al agente a clasificar y buscar información
+                    relevante.
                   </small>
                 </div>
 
                 <div className="mb-3">
-                  <label className="form-label">Archivo (PDF, Word o TXT)</label>
+                  <label className="form-label">
+                    Archivo (PDF, Word o TXT)
+                  </label>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -509,12 +553,14 @@ function DocumentosAgente() {
                     disabled={subiendo}
                   />
                   <small className="form-text text-muted">
-                    Formatos permitidos: PDF, DOCX, DOC, TXT. Tamaño máximo: 10MB
+                    Formatos permitidos: PDF, DOCX, DOC, TXT. Tamaño máximo:
+                    50MB
                   </small>
                   {archivoSeleccionado && (
                     <div className="mt-2">
                       <span className="badge bg-info">
-                        {archivoSeleccionado.name} ({formatearTamanio(archivoSeleccionado.size)})
+                        {archivoSeleccionado.name} (
+                        {formatearTamanio(archivoSeleccionado.size)})
                       </span>
                     </div>
                   )}
@@ -522,8 +568,9 @@ function DocumentosAgente() {
 
                 <div className="alert alert-info">
                   <i className="fas fa-info-circle me-2"></i>
-                  <strong>Importante:</strong> El documento será procesado y el texto extraído será usado
-                  por el agente inteligente para responder consultas. El agente se actualizará automáticamente.
+                  <strong>Importante:</strong> El documento será procesado y el
+                  texto extraído será usado por el agente inteligente para
+                  responder consultas. El agente se actualizará automáticamente.
                 </div>
               </div>
               <div className="modal-footer">
@@ -561,7 +608,10 @@ function DocumentosAgente() {
 
       {/* Modal para ver chunks del documento */}
       {showModalChunks && (
-        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div
+          className="modal show d-block"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
           <div className="modal-dialog modal-xl">
             <div className="modal-content">
               <div className="modal-header bg-info text-white">
@@ -572,7 +622,10 @@ function DocumentosAgente() {
                 <button
                   type="button"
                   className="btn-close btn-close-white"
-                  onClick={() => { setShowModalChunks(false); setChunkSeleccionado(null); }}
+                  onClick={() => {
+                    setShowModalChunks(false);
+                    setChunkSeleccionado(null);
+                  }}
                 />
               </div>
               <div className="modal-body p-0">
@@ -584,58 +637,98 @@ function DocumentosAgente() {
                 ) : chunks.length === 0 ? (
                   <div className="alert alert-warning m-3 mb-0">
                     <i className="fas fa-exclamation-triangle me-2"></i>
-                    Este documento aún no tiene chunks. Sube el documento para que se procese.
+                    Este documento aún no tiene chunks. Sube el documento para
+                    que se procese.
                   </div>
                 ) : (
-                  <div className="d-flex" style={{ minHeight: '400px' }}>
-                    <div className="border-end overflow-auto" style={{ width: '45%', maxHeight: '70vh' }}>
+                  <div className="d-flex" style={{ minHeight: "400px" }}>
+                    <div
+                      className="border-end overflow-auto"
+                      style={{ width: "45%", maxHeight: "70vh" }}
+                    >
                       <div className="list-group list-group-flush">
                         {chunks.map((chunk, idx) => {
                           const m = chunk.metadata || {};
-                          const etiqueta = m.titulo || m.capitulo || m.articulo
-                            ? [m.titulo, m.capitulo, m.articulo].filter(Boolean).join(' · ')
-                            : `Chunk ${idx + 1}`;
-                          const preview = chunk.texto ? chunk.texto.substring(0, 120) + (chunk.texto.length > 120 ? '…' : '') : '';
+                          const etiqueta =
+                            m.titulo || m.capitulo || m.articulo
+                              ? [m.titulo, m.capitulo, m.articulo]
+                                  .filter(Boolean)
+                                  .join(" · ")
+                              : `Chunk ${idx + 1}`;
+                          const preview = chunk.texto
+                            ? chunk.texto.substring(0, 120) +
+                              (chunk.texto.length > 120 ? "…" : "")
+                            : "";
                           const activo = chunkSeleccionado?.id === chunk.id;
                           return (
                             <button
                               key={chunk.id}
                               type="button"
-                              className={`list-group-item list-group-item-action text-start border-0 rounded-0 ${activo ? 'active' : ''}`}
+                              className={`list-group-item list-group-item-action text-start border-0 rounded-0 ${activo ? "active" : ""}`}
                               onClick={() => setChunkSeleccionado(chunk)}
-                              style={{ fontSize: '0.9rem' }}
+                              style={{ fontSize: "0.9rem" }}
                             >
-                              <div className="fw-medium small">{etiqueta || `#${idx + 1}`}</div>
-                              <div className={`small ${activo ? 'text-white-50' : 'text-muted'}`} title="Vista previa — clic para ver contenido completo">{preview}</div>
+                              <div className="fw-medium small">
+                                {etiqueta || `#${idx + 1}`}
+                              </div>
+                              <div
+                                className={`small ${activo ? "text-white-50" : "text-muted"}`}
+                                title="Vista previa — clic para ver contenido completo"
+                              >
+                                {preview}
+                              </div>
                             </button>
                           );
                         })}
                       </div>
                     </div>
-                    <div className="flex-grow-1 p-3 overflow-auto" style={{ maxHeight: '70vh' }}>
+                    <div
+                      className="flex-grow-1 p-3 overflow-auto"
+                      style={{ maxHeight: "70vh" }}
+                    >
                       {chunkSeleccionado ? (
                         <div>
                           <div className="mb-3">
-                            <span className="badge bg-secondary me-1">Posición {chunkSeleccionado.posicion + 1}</span>
+                            <span className="badge bg-secondary me-1">
+                              Posición {chunkSeleccionado.posicion + 1}
+                            </span>
                             {(chunkSeleccionado.metadata || {}).tipo && (
-                              <span className="badge bg-primary me-1">{chunkSeleccionado.metadata.tipo}</span>
+                              <span className="badge bg-primary me-1">
+                                {chunkSeleccionado.metadata.tipo}
+                              </span>
                             )}
                             {(chunkSeleccionado.metadata || {}).titulo && (
-                              <span className="badge bg-info me-1">{(chunkSeleccionado.metadata || {}).titulo}</span>
+                              <span className="badge bg-info me-1">
+                                {(chunkSeleccionado.metadata || {}).titulo}
+                              </span>
                             )}
                             {(chunkSeleccionado.metadata || {}).capitulo && (
-                              <span className="badge bg-warning text-dark me-1">{(chunkSeleccionado.metadata || {}).capitulo}</span>
+                              <span className="badge bg-warning text-dark me-1">
+                                {(chunkSeleccionado.metadata || {}).capitulo}
+                              </span>
                             )}
                             {(chunkSeleccionado.metadata || {}).articulo && (
-                              <span className="badge bg-success me-1">Art. {(chunkSeleccionado.metadata || {}).articulo}</span>
+                              <span className="badge bg-success me-1">
+                                Art.{" "}
+                                {(chunkSeleccionado.metadata || {}).articulo}
+                              </span>
                             )}
-                            {(chunkSeleccionado.metadata || {}).titulo_articulo && (
-                              <span className="badge bg-dark">{(chunkSeleccionado.metadata || {}).titulo_articulo}</span>
+                            {(chunkSeleccionado.metadata || {})
+                              .titulo_articulo && (
+                              <span className="badge bg-dark">
+                                {
+                                  (chunkSeleccionado.metadata || {})
+                                    .titulo_articulo
+                                }
+                              </span>
                             )}
                           </div>
                           <div
                             className="bg-light p-3 rounded small"
-                            style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}
+                            style={{
+                              whiteSpace: "pre-wrap",
+                              fontFamily: "inherit",
+                            }}
                           >
                             {chunkSeleccionado.texto}
                           </div>
@@ -643,8 +736,14 @@ function DocumentosAgente() {
                       ) : (
                         <div className="text-muted text-center py-5">
                           <i className="fas fa-hand-pointer fa-2x mb-2"></i>
-                          <p className="mb-0">Selecciona un chunk de la lista para ver su contenido completo</p>
-                          <small className="text-muted">La lista muestra vista previa; al seleccionar se muestra el texto completo sin cortes</small>
+                          <p className="mb-0">
+                            Selecciona un chunk de la lista para ver su
+                            contenido completo
+                          </p>
+                          <small className="text-muted">
+                            La lista muestra vista previa; al seleccionar se
+                            muestra el texto completo sin cortes
+                          </small>
                         </div>
                       )}
                     </div>
@@ -653,12 +752,15 @@ function DocumentosAgente() {
               </div>
               <div className="modal-footer">
                 <span className="me-auto text-muted small">
-                  {chunks.length} chunk{chunks.length !== 1 ? 's' : ''} en total
+                  {chunks.length} chunk{chunks.length !== 1 ? "s" : ""} en total
                 </span>
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={() => { setShowModalChunks(false); setChunkSeleccionado(null); }}
+                  onClick={() => {
+                    setShowModalChunks(false);
+                    setChunkSeleccionado(null);
+                  }}
                 >
                   Cerrar
                 </button>
@@ -670,12 +772,17 @@ function DocumentosAgente() {
 
       {/* Modal de confirmación para eliminar/desactivar documento */}
       {showConfirmDeleteModal && (
-        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div
+          className="modal show d-block"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
-                  {confirmDeleteData.eliminarFisico ? 'Confirmar eliminación permanente' : 'Confirmar desactivación'}
+                  {confirmDeleteData.eliminarFisico
+                    ? "Confirmar eliminación permanente"
+                    : "Confirmar desactivación"}
                 </h5>
                 <button
                   type="button"
@@ -695,19 +802,19 @@ function DocumentosAgente() {
                       <span className="spinner-border spinner-border-sm text-danger me-2"></span>
                       <strong>Eliminando documento...</strong>
                     </div>
-                    <div className="progress" style={{ height: '8px' }}>
+                    <div className="progress" style={{ height: "8px" }}>
                       <div
                         className="progress-bar progress-bar-striped progress-bar-animated bg-danger"
                         role="progressbar"
-                        style={{ width: '100%' }}
+                        style={{ width: "100%" }}
                       />
                     </div>
                   </div>
                 )}
                 <p className="mb-0">
                   {confirmDeleteData.eliminarFisico
-                    ? '¿Estás seguro de que quieres eliminar permanentemente este documento? Esta acción no se puede deshacer.'
-                    : '¿Estás seguro de que quieres desactivar este documento?'}
+                    ? "¿Estás seguro de que quieres eliminar permanentemente este documento? Esta acción no se puede deshacer."
+                    : "¿Estás seguro de que quieres desactivar este documento?"}
                 </p>
               </div>
               <div className="modal-footer">
@@ -725,15 +832,15 @@ function DocumentosAgente() {
                 </button>
                 <button
                   type="button"
-                  className={`btn ${confirmDeleteData.eliminarFisico ? 'btn-danger' : 'btn-warning'}`}
+                  className={`btn ${confirmDeleteData.eliminarFisico ? "btn-danger" : "btn-warning"}`}
                   onClick={confirmarEliminar}
                   disabled={eliminandoDocumento}
                 >
                   {eliminandoDocumento
-                    ? 'Eliminando...'
+                    ? "Eliminando..."
                     : confirmDeleteData.eliminarFisico
-                      ? 'Sí, eliminar permanentemente'
-                      : 'Sí, desactivar'}
+                      ? "Sí, eliminar permanentemente"
+                      : "Sí, desactivar"}
                 </button>
               </div>
             </div>
@@ -744,7 +851,12 @@ function DocumentosAgente() {
       {notification.show && (
         <div
           className={`alert alert-${notification.type} alert-dismissible fade show position-fixed`}
-          style={{ top: '20px', right: '20px', zIndex: 9999, minWidth: '300px' }}
+          style={{
+            top: "20px",
+            right: "20px",
+            zIndex: 9999,
+            minWidth: "300px",
+          }}
           role="alert"
         >
           {notification.message}
@@ -761,13 +873,12 @@ function DocumentosAgente() {
 
 function getTipoColor(tipo) {
   const colores = {
-    reglamento: 'primary',
-    becas: 'success',
-    inscripcion: 'info',
-    otros: 'secondary'
+    reglamento: "primary",
+    becas: "success",
+    inscripcion: "info",
+    otros: "secondary",
   };
-  return colores[tipo] || 'secondary';
+  return colores[tipo] || "secondary";
 }
 
 export default DocumentosAgente;
-
