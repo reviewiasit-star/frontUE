@@ -67,15 +67,33 @@ const getQuickActions = (userRole) => {
   return ejemplosComunicados.slice(0, 4);
 };
 
-// Formatear texto con markdown básico
+// Formatear texto con markdown básico + URLs como enlaces clicables
 const formatMessage = (text) => {
   if (!text) return "";
 
-  // Convertir **texto** a <strong>
+  // Convertir **texto** a <strong> (WhatsApp bold)
   let formatted = text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 
-  // Convertir *texto* a bullet points si está al inicio de línea
+  // Convertir *texto* a <strong> (WhatsApp bold - una sola estrella)
+  formatted = formatted.replace(/\*([^*\n]+?)\*/g, "<strong>$1</strong>");
+
+  // Convertir _texto_ a <em> (itálica)
+  formatted = formatted.replace(/_(.*?)_/g, "<em>$1</em>");
+
+  // Convertir bullet points al inicio de línea
   formatted = formatted.replace(/^\* /gm, "• ");
+
+  // Convertir URLs en enlaces clicables (https:// o http://)
+  formatted = formatted.replace(
+    /(https?:\/\/[^\s<>"]+[^\s<>".,;:!?\)])/g,
+    (url) =>
+      `<a href="${url}" target="_blank" rel="noopener noreferrer" ` +
+      `style="color:#0d6efd;text-decoration:underline;word-break:break-all;" ` +
+      `title="Abrir PDF">` +
+      `<i class="fas fa-file-pdf me-1" style="color:#dc3545;"></i>` +
+      `Descargar PDF` +
+      `</a>`,
+  );
 
   // Convertir saltos de línea
   formatted = formatted.replace(/\n/g, "<br/>");
