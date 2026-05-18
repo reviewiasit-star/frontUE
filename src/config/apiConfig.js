@@ -1,6 +1,7 @@
 // URLs fijas de Railway (respaldo si no hay .env en Vercel)
 const RAILWAY_BACKEND_PRINCIPAL = 'https://backprincipalemiwch-production.up.railway.app';
-const RAILWAY_BACKEND_CAJAS = '';
+const RAILWAY_BACKEND_CAJAS = 'https://backendcajasemiwch-production.up.railway.app';
+
 
 function isLocalHost() {
   if (typeof window === 'undefined') return true;
