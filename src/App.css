@@ -244,7 +244,26 @@ html, body {
   .main-panel {
     width: 100% !important;
     margin-left: 0 !important;
+    padding-top: 60px !important; /* Espacio para que el header móvil fijo no tape el contenido */
   }
+
+  /* Permitir scroll vertical en la vista móvil si el contenido excede la pantalla */
+  .main-panel .container,
+  .main-panel .container-fluid,
+  .dashboard-container,
+  .container,
+  .container-fluid {
+    overflow-y: auto !important;
+    max-height: calc(100vh - 60px) !important;
+    height: auto !important;
+  }
+}
+
+/* Ocultar botones de menú móvil duplicados en las páginas individuales */
+.main-panel button.d-md-none,
+.main-panel button.d-none.d-md-inline + button.d-md-none,
+.main-panel button i.fa-bars.d-md-none {
+  display: none !important;
 }
 
 /* Eliminar cualquier espacio en elementos específicos */

@@ -20,13 +20,19 @@ const ModoDispositivo = ({ isOpen, onClose, onNavigate, onLogout, user }) => {
         adminDashboardItem,
         ...commonItems,
         { icon: 'fas fa-users', label: 'Usuarios', path: 'usuarios', type: 'simple' },
+        { icon: 'fab fa-whatsapp', label: 'WhatsApp', path: 'whatsapp-admin', type: 'simple' },
+        { icon: 'fas fa-file-alt', label: 'Documentos Agente', path: 'documentos-agente', type: 'simple' },
         // Separador GESTIÓN INSCRIPCIÓN
         { type: 'separator', label: 'GESTIÓN INSCRIPCIÓN' },
         { icon: 'fas fa-user-graduate', label: 'Estudiantes', path: 'estudiantes', type: 'simple' },
+        { icon: 'fas fa-chart-bar', label: 'Reportes Inscripción', path: 'reportes-inscripcion', type: 'simple' },
         // Separador CONTROL DE PAGO
         { type: 'separator', label: 'CONTROL DE PAGO' },
         { icon: 'fas fa-chart-line', label: 'Reportes', path: 'reportes', type: 'simple' },
-        { icon: 'fas fa-university', label: 'Ingresos Académicos', path: 'ingresos-academicos', type: 'simple' }
+        { icon: 'fas fa-university', label: 'Ingresos Académicos', path: 'ingresos-academicos', type: 'simple' },
+        // Separador AJUSTES
+        { type: 'separator', label: 'AJUSTES' },
+        { icon: 'fas fa-user-cog', label: 'Configuración', path: 'configuracion', type: 'simple' }
       ];
     }
 
@@ -38,7 +44,9 @@ const ModoDispositivo = ({ isOpen, onClose, onNavigate, onLogout, user }) => {
         { type: 'separator', label: 'GESTIÓN INSCRIPCIÓN' },
         { icon: 'fas fa-user-graduate', label: 'Estudiantes', path: 'estudiantes', type: 'simple' },
         { icon: 'fas fa-chart-bar', label: 'Reportes Inscripción', path: 'reportes-inscripcion', type: 'simple' },
-        { icon: 'fas fa-hands-helping', label: 'Servicios adquiridos', path: 'adquisicion-servicios', type: 'simple' }
+        // Separador AJUSTES
+        { type: 'separator', label: 'AJUSTES' },
+        { icon: 'fas fa-user-cog', label: 'Configuración', path: 'configuracion', type: 'simple' }
       ];
     }
 
@@ -57,13 +65,10 @@ const ModoDispositivo = ({ isOpen, onClose, onNavigate, onLogout, user }) => {
         { icon: 'fas fa-gift', label: 'Becas', path: 'becas', type: 'simple' },
         { icon: 'fas fa-book', label: 'Academia', path: 'academia', type: 'simple' },
         { icon: 'fas fa-cogs', label: 'Servicios', path: 'servicios', type: 'simple' },
-        // Separador GESTIÓN INSCRIPCIÓN
-        { type: 'separator', label: 'GESTIÓN INSCRIPCIÓN' },
-        { icon: 'fas fa-chart-bar', label: 'Reportes Inscripción', path: 'reportes-inscripcion', type: 'simple' },
-        // Separador CONTROL DE PAGO
-        { type: 'separator', label: 'CONTROL DE PAGO' },
-        { icon: 'fas fa-chart-line', label: 'Reportes', path: 'reportes', type: 'simple' },
-        { icon: 'fas fa-university', label: 'Ingresos Académicos', path: 'ingresos-academicos', type: 'simple' }
+        { icon: 'fas fa-university', label: 'Ingresos Académicos', path: 'ingresos-academicos', type: 'simple' },
+        // Separador AJUSTES
+        { type: 'separator', label: 'AJUSTES' },
+        { icon: 'fas fa-user-cog', label: 'Configuración', path: 'configuracion', type: 'simple' }
       ];
     }
 
@@ -83,7 +88,9 @@ const ModoDispositivo = ({ isOpen, onClose, onNavigate, onLogout, user }) => {
         // Separador CONTROL DE PAGO
         { type: 'separator', label: 'CONTROL DE PAGO' },
         { icon: 'fas fa-file-contract', label: 'Compromiso Económico', path: 'compromiso', type: 'simple' },
-        { icon: 'fas fa-receipt', label: 'Comprobantes revisados', path: 'comprobantes-revisados', type: 'simple' }
+        // Separador AJUSTES
+        { type: 'separator', label: 'AJUSTES' },
+        { icon: 'fas fa-user-cog', label: 'Configuración', path: 'configuracion', type: 'simple' }
       ];
     }
 
