@@ -83,15 +83,15 @@ const formatMessage = (text) => {
   // Convertir bullet points al inicio de línea
   formatted = formatted.replace(/^\* /gm, "• ");
 
-  // Convertir URLs en enlaces clicables (https:// o http://)
+   // Convertir URLs en enlaces clicables (https:// o http://)
   formatted = formatted.replace(
-    /(https?:\/\/[^\s<>"]+[^\s<>".,;:!?\)])/g,
+    /(https?:\/\/[^\s<>"]+)/g,
     (url) =>
       `<a href="${url}" target="_blank" rel="noopener noreferrer" ` +
       `style="color:#0d6efd;text-decoration:underline;word-break:break-all;" ` +
-      `title="Abrir PDF">` +
-      `<i class="fas fa-file-pdf me-1" style="color:#dc3545;"></i>` +
-      `Descargar PDF` +
+      `title="Abrir archivo">` +
+      `<i class="fas fa-file-download me-1" style="color:#dc3545;"></i>` +
+      `Descargar` +
       `</a>`,
   );
 
