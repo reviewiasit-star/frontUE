@@ -328,43 +328,67 @@ function CompromisoModal({ isOpen, onClose, form, becas, inscripcion }) {
                     <h6 className="mb-0">Resumen Final del Compromiso</h6>
                   </div>
                   <div className="card-body">
-                    <div className="row mb-3">
-                      <div className="col-md-6">
-                        <h6 className="text-primary">Información de la beca</h6>
-                        <p className="mb-1"><strong>Descuento:</strong> {resumen.descuentoPorc}%</p>
-                        <p className="mb-1"><strong>Meses con beca:</strong> {resumen.mesesConBeca.length > 0 ? resumen.mesesConBeca.join(', ') : 'Ninguno'}</p>
-                        <p className="mb-0"><strong>Meses sin beca:</strong> {resumen.mesesSinBeca}</p>
-                      </div>
-                      <div className="col-md-6">
-                        <h6 className="text-primary">Cálculo de cuotas</h6>
-                        <p className="mb-1"><strong>Cuota mensual base:</strong> Bs {resumen.cuotaMensualBase.toFixed(2)}</p>
-                        <p className="mb-1"><strong>Cuota con descuento:</strong> Bs {resumen.cuotaConDescuento.toFixed(2)}</p>
-                        <p className="mb-0"><strong>Descuento total:</strong> Bs {resumen.descuentoTotal.toFixed(2)}</p>
-                      </div>
-                    </div>
-                    
-                    <table className="table table-bordered w-auto mb-3">
-                      <tbody>
-                        <tr>
-                          <th>Total sin descuento (nivel {inscripcion?.nivel_nombre})</th>
-                          <td>Bs {resumen.costoTotal.toFixed(2)}</td>
-                        </tr>
-                        <tr className="table-success">
-                          <th><strong>Total general</strong></th>
-                          <td><strong>Bs {resumen.totalConDescuento.toFixed(2)}</strong></td>
-                        </tr>
-                      </tbody>
-                    </table>
-                    
-                    <div className="alert alert-info">
-                      <h6 className="alert-heading">Desglose detallado:</h6>
-                      <p className="mb-1">• {resumen.mesesSinBeca} meses sin beca: {resumen.mesesSinBeca} × Bs {resumen.cuotaMensualBase.toFixed(2)} = Bs {resumen.totalMesesSinBeca.toFixed(2)}</p>
-                      <p className="mb-0">• {resumen.mesesConBeca.length} meses con beca ({resumen.descuentoPorc}%): {resumen.mesesConBeca.length} × Bs {resumen.cuotaConDescuento.toFixed(2)} = Bs {resumen.totalMesesConBeca.toFixed(2)}</p>
+                                      <div className="row">
+                                        <div className="col-12 col-md-6">
+                                          <div className="card h-100">
+                                            <div className="card-body">
+                                              <h6 className="text-primary">Información de la beca</h6>
+                                              <p className="mb-1"><strong>Descuento:</strong> {resumen.descuentoPorc}%</p>
+                                              <p className="mb-1"><strong>Meses con beca:</strong> {resumen.mesesConBeca.length > 0 ? resumen.mesesConBeca.join(', ') : 'Ninguno'}</p>
+                                              <p className="mb-0"><strong>Meses sin beca:</strong> {resumen.mesesSinBeca}</p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                        <div className="col-12 col-md-6 mt-3 mt-md-0">
+                                          <div className="card h-100">
+                                            <div className="card-body">
+                                              <h6 className="text-primary">Cálculo de cuotas</h6>
+                                              <p className="mb-1"><strong>Cuota mensual base:</strong> Bs {resumen.cuotaMensualBase.toFixed(2)}</p>
+                                              <p className="mb-1"><strong>Cuota con descuento:</strong> Bs {resumen.cuotaConDescuento.toFixed(2)}</p>
+                                              <p className="mb-0"><strong>Descuento total:</strong> Bs {resumen.descuentoTotal.toFixed(2)}</p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="mt-3">
+                                      <div className="card">
+                                        <div className="card-header bg-success text-white">
+                                          <h6 className="mb-0">Resumen General</h6>
+                                        </div>
+                                        <div className="card-body">
+                                          <div className="row text-center">
+                                            <div className="col-6 col-md-6">
+                                              <small className="text-muted d-block">Total cuotas</small>
+                                              <span className="h6">Bs {resumen.costoTotal.toFixed(2)}</span>
+                                            </div>
+                                            <div className="col-6 col-md-6">
+                                              <small className="text-muted d-block">Total general</small>
+                                              <span className="h6 text-success">Bs {resumen.totalConDescuento.toFixed(2)}</span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="alert alert-info mb-0">
+                                      <h6 className="alert-heading">Desglose detallado:</h6>
+                                      <p className="mb-1">• {resumen.mesesSinBeca} meses sin beca: {resumen.mesesSinBeca} × Bs {resumen.cuotaMensualBase.toFixed(2)} = Bs {resumen.totalMesesSinBeca.toFixed(2)}</p>
+                                      <p className="mb-0">• {resumen.mesesConBeca.length} meses con beca ({resumen.descuentoPorc}%): {resumen.mesesConBeca.length} × Bs {resumen.cuotaConDescuento.toFixed(2)} = Bs {resumen.totalMesesConBeca.toFixed(2)}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               )}
-            </form>
+            </div>
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>Cerrar</button>
@@ -374,15 +398,6 @@ function CompromisoModal({ isOpen, onClose, form, becas, inscripcion }) {
           </div>
         </div>
       </div>
-
-      {/* Componente de notificaciones */}
-      <NotificationModal
-        show={notification.show}
-        type={notification.type}
-        title={notification.title}
-        message={notification.message}
-        onClose={hideNotification}
-      />
     </div>
   );
 }

@@ -485,32 +485,50 @@ const InformacionEstudianteModal = ({
                 </div>
               )}
 
-              {/* Pestaña Saldos Pendientes */}
-              {activeTab === 'saldos' && compromiso && (
-                <div className="tab-pane fade show active">
-                  <div className="card">
-                    <div className="card-header bg-warning text-dark">
-                      <h6 className="mb-0">Saldos Pendientes</h6>
-                    </div>
-                    <div className="card-body p-0">
-                      <table className="table table-bordered mb-0 text-center" style={{ background: "#f8f9fa", fontSize: "1.1em" }}>
-                        <thead className="table-light">
-                          <tr>
-                            <th className="text-center fw-bold">Saldo pendiente de cuotas</th>
-                            <th className="text-center fw-bold">Saldo total pendiente</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td className="fw-bold text-primary">Bs {formatearMonto(saldoCuotas)}</td>
-                            <td className="fw-bold text-danger">Bs {formatearMonto(saldoTotal)}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              )}
+               {/* Pestaña Saldos Pendientes */}
+               {activeTab === 'saldos' && compromiso && (
+                 <div className="tab-pane fade show active">
+                   <div className="card">
+                     <div className="card-header bg-warning text-dark">
+                       <h6 className="mb-0">Saldos Pendientes</h6>
+                     </div>
+                     <div className="card-body p-0">
+                       {/* Vista escritorio: tabla */}
+                       <div className="d-none d-md-block">
+                         <table className="table table-bordered mb-0 text-center" style={{ background: "#f8f9fa", fontSize: "1.1em" }}>
+                           <thead className="table-light">
+                             <tr>
+                               <th className="text-center fw-bold">Saldo pendiente de cuotas</th>
+                               <th className="text-center fw-bold">Saldo total pendiente</th>
+                             </tr>
+                           </thead>
+                           <tbody>
+                             <tr>
+                               <td className="fw-bold text-primary">Bs {formatearMonto(saldoCuotas)}</td>
+                               <td className="fw-bold text-danger">Bs {formatearMonto(saldoTotal)}</td>
+                             </tr>
+                           </tbody>
+                         </table>
+                       </div>
+
+                       {/* Vista móvil: tarjetas */}
+                       <div className="d-md-none">
+                         <div className="p-3">
+                           <div className="d-flex justify-content-between align-items-center mb-3">
+                             <span className="text-muted small">Saldo de cuotas:</span>
+                             <span className="h5 text-primary mb-0">Bs {formatearMonto(saldoCuotas)}</span>
+                           </div>
+                           <div className="d-flex justify-content-between align-items-center">
+                             <span className="text-muted small">Saldo TOTAL pendiente:</span>
+                             <span className="h5 text-danger mb-0">Bs {formatearMonto(saldoTotal)}</span>
+                           </div>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               )}
+
 
               {/* Pestaña Historial de Pagos */}
               {activeTab === 'historial' && compromiso && (

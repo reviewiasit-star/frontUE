@@ -2076,128 +2076,209 @@ const Compromiso = () => {
               {/* Tabla de control de pagos mensual - Solo mostrar si hay inscripción seleccionada */}
               {compromiso && inscripcionSeleccionada && !mostrarInscripciones && (
                 <div className="card mb-3">
-                  <div className="card-header bg-secondary text-white">Control de Pagos Mensuales</div>
+                  <div className="card-header bg-secondary text-white">
+                    <i className="fas fa-calendar-alt me-2"></i>Control de Pagos Mensuales
+                  </div>
                   <div className="card-body p-0">
-                    <table className="table table-bordered table-sm mb-0">
-                      <thead className="table-light">
-                        <tr>
-                          <th>Mes</th>
-                          <th>Monto esperado</th>
-                          <th>Monto pagado</th>
-                          <th>Saldo pendiente</th>
-                          <th>Estado</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {/* Usar datos de la tabla pagos_mensuales */}
-                        {pagosMensuales.length > 0 ? (
-                          pagosMensuales.map((pagoMensual) => {
-                            const montoEsperado = Number(pagoMensual.monto_esperado || 0);
-                            const montoPagado = Number(pagoMensual.monto_pagado || 0);
-                            const saldoPendiente = Number(pagoMensual.saldo_pendiente || 0);
-                            const tieneBeca = pagoMensual.tiene_beca === 1;
-                            
-                            let estado = '';
-                            let color = '';
-                            
-                            switch (pagoMensual.estado) {
-                              case 'pagado':
+                    {/* Vista escritorio: tabla */}
+                    <div className="d-none d-md-block">
+                      <table className="table table-bordered table-sm mb-0">
+                        <thead className="table-light">
+                          <tr>
+                            <th>Mes</th>
+                            <th>Monto esperado</th>
+                            <th>Monto pagado</th>
+                            <th>Saldo pendiente</th>
+                            <th>Estado</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pagosMensuales.length > 0 ? (
+                            pagosMensuales.map((pagoMensual) => {
+                              const montoEsperado = Number(pagoMensual.monto_esperado || 0);
+                              const montoPagado = Number(pagoMensual.monto_pagado || 0);
+                              const saldoPendiente = Number(pagoMensual.saldo_pendiente || 0);
+                              const tieneBeca = pagoMensual.tiene_beca === 1;
+                              let estado = '';
+                              let color = '';
+                              switch (pagoMensual.estado) {
+                                case 'pagado':
+                                  estado = 'Pagado';
+                                  color = 'success';
+                                  break;
+                                case 'parcial':
+                                  estado = `Parcial (Falta Bs ${saldoPendiente.toFixed(2)})`;
+                                  color = 'warning';
+                                  break;
+                                case 'pendiente':
+                                default:
+                                  estado = 'Pendiente';
+                                  color = 'danger';
+                                  break;
+                              }
+                              return (
+                                <tr key={`${pagoMensual.mes}-${pagoMensual.anio}`} style={{ background: tieneBeca ? '#d4edda' : 'white' }}>
+                                  <td style={{ fontWeight: tieneBeca ? 'bold' : 'normal' }}>
+                                    {pagoMensual.nombre_mes ? pagoMensual.nombre_mes.charAt(0).toUpperCase() + pagoMensual.nombre_mes.slice(1) : `Mes ${pagoMensual.mes}`}
+                                  </td>
+                                  <td>Bs {montoEsperado.toFixed(2)}</td>
+                                  <td>Bs {montoPagado.toFixed(2)}</td>
+                                  <td>Bs {saldoPendiente.toFixed(2)}</td>
+                                  <td>
+                                    <span className={`badge bg-${color}`}>{estado}</span>
+                                    {tieneBeca && <span className="badge bg-success ms-2">Descuento {pagoMensual.porcentaje_beca}%</span>}
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          ) : (
+                            mesesPagos.map((mes) => {
+                              const mesesBeca = (compromiso.meses_beca || '').split(',').map(m => m.trim());
+                              const tieneDescuento = mesesBeca.includes(mes);
+                              const numeroCuotas = mesesPagos.length;
+                              const montoBaseSinDescuento = Number(form.costo_mensual) / numeroCuotas;
+                              const montoEsperado = tieneDescuento
+                                ? Math.round(montoBaseSinDescuento * (1 - compromiso.descuento_aplicado) * 100) / 100
+                                : Math.round(montoBaseSinDescuento * 100) / 100;
+                              const pagosMes = pagos.filter(p => {
+                                if (p.tipo_pago !== 'cuota' && p.tipo_pago !== 'ambos') return false;
+                                const mesesPago = p.mes.split(',').map(m => m.trim());
+                                return mesesPago.includes(mes);
+                              });
+                              const montoPagado = pagosMes.reduce((sum, p) => {
+                                const mesesPago = p.mes.split(',').map(m => m.trim());
+                                const cantidadMeses = mesesPago.length;
+                                let montoPago;
+                                if (p.tipo_pago === 'ambos') {
+                                  montoPago = Number(p.monto_cuota || 0);
+                                } else {
+                                  montoPago = Number(p.monto || 0);
+                                }
+                                if (cantidadMeses > 1) {
+                                  montoPago = montoPago / cantidadMeses;
+                                }
+                                return sum + montoPago;
+                              }, 0);
+                              const saldoPendiente = Math.max(montoEsperado - montoPagado, 0);
+                              let estado = '';
+                              let color = '';
+                              if (montoPagado >= montoEsperado) {
                                 estado = 'Pagado';
                                 color = 'success';
-                                break;
-                              case 'parcial':
-                                estado = `Parcial (Falta Bs ${saldoPendiente.toFixed(2)})`;
+                              } else if (montoPagado > 0 && montoPagado < montoEsperado) {
+                                estado = `Parcial (Falta Bs ${Math.round((montoEsperado - montoPagado) * 100) / 100})`;
                                 color = 'warning';
-                                break;
-                              case 'pendiente':
-                              default:
+                              } else {
                                 estado = 'Pendiente';
                                 color = 'danger';
-                                break;
-                            }
-                            
-                            return (
-                              <tr key={`${pagoMensual.mes}-${pagoMensual.anio}`} style={{ background: tieneBeca ? '#d4edda' : 'white' }}>
-                                <td style={{ fontWeight: tieneBeca ? 'bold' : 'normal' }}>
-                                  {pagoMensual.nombre_mes ? pagoMensual.nombre_mes.charAt(0).toUpperCase() + pagoMensual.nombre_mes.slice(1) : `Mes ${pagoMensual.mes}`}
-                                </td>
-                                <td>Bs {montoEsperado.toFixed(2)}</td>
-                                <td>Bs {montoPagado.toFixed(2)}</td>
-                                <td>Bs {saldoPendiente.toFixed(2)}</td>
-                                <td>
-                                  <span className={`badge bg-${color}`}>{estado}</span>
-                                  {tieneBeca && <span className="badge bg-success ms-2">Descuento {pagoMensual.porcentaje_beca}%</span>}
-                                </td>
-                              </tr>
-                            );
-                          })
-                        ) : (
-                          // Fallback: usar cálculos manuales si no hay datos en pagos_mensuales
-                          mesesPagos.map((mes) => {
-                            const mesesBeca = (compromiso.meses_beca || '').split(',').map(m => m.trim());
-                            const tieneDescuento = mesesBeca.includes(mes);
-                            
-                            // Calcular el monto base sin descuento
-                            const numeroCuotas = mesesPagos.length;
-                            const montoBaseSinDescuento = Number(form.costo_mensual) / numeroCuotas;
-                            
-                            // Aplicar descuento solo si este mes específico tiene beca
-                            const montoEsperado = tieneDescuento
-                              ? Math.round(montoBaseSinDescuento * (1 - compromiso.descuento_aplicado) * 100) / 100
-                              : Math.round(montoBaseSinDescuento * 100) / 100;
-                            const pagosMes = pagos.filter(p => {
-                              if (p.tipo_pago !== 'cuota' && p.tipo_pago !== 'ambos') return false;
-                              // Verificar si el mes está incluido en el pago (maneja tanto pagos individuales como múltiples)
-                              const mesesPago = p.mes.split(',').map(m => m.trim());
-                              return mesesPago.includes(mes);
-                            });
-                            const montoPagado = pagosMes.reduce((sum, p) => {
-                              // Obtener los meses del pago
-                              const mesesPago = p.mes.split(',').map(m => m.trim());
-                              const cantidadMeses = mesesPago.length;
-                              
-                              // Si es tipo 'ambos', usar monto_cuota; si es 'cuota', usar monto
-                              let montoPago;
-                              if (p.tipo_pago === 'ambos') {
-                                montoPago = Number(p.monto_cuota || 0);
-                              } else {
-                                montoPago = Number(p.monto || 0);
                               }
-                              
-                              // Si el pago cubre múltiples meses, dividir el monto
-                              if (cantidadMeses > 1) {
-                                montoPago = montoPago / cantidadMeses;
-                              }
-                              
-                              return sum + montoPago;
-                            }, 0);
-                            const saldoPendiente = Math.max(montoEsperado - montoPagado, 0);
-                            let estado = '';
-                            let color = '';
-                            if (montoPagado >= montoEsperado) {
+                              return (
+                                <tr key={mes} style={{ background: tieneDescuento ? '#d4edda' : 'white' }}>
+                                  <td style={{ fontWeight: tieneDescuento ? 'bold' : 'normal' }}>{mes.charAt(0).toUpperCase() + mes.slice(1)}</td>
+                                  <td>Bs {montoEsperado}</td>
+                                  <td>Bs {montoPagado}</td>
+                                  <td>Bs {saldoPendiente}</td>
+                                  <td><span className={`badge bg-${color}`}>{estado}</span>{tieneDescuento && <span className="badge bg-success ms-2">Descuento</span>}</td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                    {/* Vista móvil: tarjetas */}
+                    <div className="d-md-none">
+                      {pagosMensuales.length > 0 ? (
+                        pagosMensuales.map((pagoMensual) => {
+                          const montoEsperado = Number(pagoMensual.monto_esperado || 0);
+                          const montoPagado = Number(pagoMensual.monto_pagado || 0);
+                          const saldoPendiente = Number(pagoMensual.saldo_pendiente || 0);
+                          const tieneBeca = pagoMensual.tiene_beca === 1;
+                          let estado = '';
+                          let color = '';
+                          switch (pagoMensual.estado) {
+                            case 'pagado':
                               estado = 'Pagado';
                               color = 'success';
-                            } else if (montoPagado > 0 && montoPagado < montoEsperado) {
-                              estado = `Parcial (Falta Bs ${Math.round((montoEsperado - montoPagado) * 100) / 100})`;
+                              break;
+                            case 'parcial':
+                              estado = `Parcial (Falta Bs ${saldoPendiente.toFixed(2)})`;
                               color = 'warning';
-                            } else {
+                              break;
+                            case 'pendiente':
+                            default:
                               estado = 'Pendiente';
                               color = 'danger';
-                            }
-                            return (
-                              <tr key={mes} style={{ background: tieneDescuento ? '#d4edda' : 'white' }}>
-                                <td style={{ fontWeight: tieneDescuento ? 'bold' : 'normal' }}>{mes.charAt(0).toUpperCase() + mes.slice(1)}</td>
-                                <td>Bs {montoEsperado}</td>
-                                <td>Bs {montoPagado}</td>
-                                <td>Bs {saldoPendiente}</td>
-                                <td><span className={`badge bg-${color}`}>{estado}</span>{tieneDescuento && <span className="badge bg-success ms-2">Descuento</span>}</td>
-                              </tr>
-                            );
-                          })
-                        )}
-
-                      </tbody>
-                    </table>
+                              break;
+                          }
+                          const nombreMes = pagoMensual.nombre_mes ? pagoMensual.nombre_mes.charAt(0).toUpperCase() + pagoMensual.nombre_mes.slice(1) : `Mes ${pagoMensual.mes}`;
+                          return (
+                            <div key={`${pagoMensual.mes}-${pagoMensual.anio}`} className="px-3 py-2 border-bottom" style={{ background: tieneBeca ? '#d4edda' : 'white' }}>
+                              <div className="d-flex justify-content-between align-items-center mb-1">
+                                <strong style={{ fontSize: '0.95rem' }}>{nombreMes}</strong>
+                                <span className={`badge bg-${color}`}>{estado}</span>
+                              </div>
+                              {tieneBeca && <div className="mb-1"><span className="badge bg-success">Descuento {pagoMensual.porcentaje_beca}%</span></div>}
+                              <div className="d-flex justify-content-between" style={{ fontSize: '0.82rem', color: '#555' }}>
+                                <span>Esperado: <strong>Bs {montoEsperado.toFixed(2)}</strong></span>
+                                <span>Pagado: <strong style={{ color: '#198754' }}>Bs {montoPagado.toFixed(2)}</strong></span>
+                              </div>
+                              {saldoPendiente > 0 && (
+                                <div style={{ fontSize: '0.82rem', color: '#dc3545' }}>
+                                  Saldo pendiente: <strong>Bs {saldoPendiente.toFixed(2)}</strong>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      ) : (
+                        mesesPagos.map((mes) => {
+                          const mesesBeca = (compromiso.meses_beca || '').split(',').map(m => m.trim());
+                          const tieneDescuento = mesesBeca.includes(mes);
+                          const numeroCuotas = mesesPagos.length;
+                          const montoBaseSinDescuento = Number(form.costo_mensual) / numeroCuotas;
+                          const montoEsperado = tieneDescuento
+                            ? Math.round(montoBaseSinDescuento * (1 - compromiso.descuento_aplicado) * 100) / 100
+                            : Math.round(montoBaseSinDescuento * 100) / 100;
+                          const pagosMes = pagos.filter(p => {
+                            if (p.tipo_pago !== 'cuota' && p.tipo_pago !== 'ambos') return false;
+                            const mesesPago = p.mes.split(',').map(m => m.trim());
+                            return mesesPago.includes(mes);
+                          });
+                          const montoPagado = pagosMes.reduce((sum, p) => {
+                            const mesesPago = p.mes.split(',').map(m => m.trim());
+                            const cantidadMeses = mesesPago.length;
+                            let montoPago = p.tipo_pago === 'ambos' ? Number(p.monto_cuota || 0) : Number(p.monto || 0);
+                            if (cantidadMeses > 1) montoPago = montoPago / cantidadMeses;
+                            return sum + montoPago;
+                          }, 0);
+                          const saldoPendiente = Math.max(montoEsperado - montoPagado, 0);
+                          let estado = '';
+                          let color = '';
+                          if (montoPagado >= montoEsperado) { estado = 'Pagado'; color = 'success'; }
+                          else if (montoPagado > 0) { estado = `Parcial (Falta Bs ${Math.round((montoEsperado - montoPagado) * 100) / 100})`; color = 'warning'; }
+                          else { estado = 'Pendiente'; color = 'danger'; }
+                          return (
+                            <div key={mes} className="px-3 py-2 border-bottom" style={{ background: tieneDescuento ? '#d4edda' : 'white' }}>
+                              <div className="d-flex justify-content-between align-items-center mb-1">
+                                <strong style={{ fontSize: '0.95rem' }}>{mes.charAt(0).toUpperCase() + mes.slice(1)}</strong>
+                                <span className={`badge bg-${color}`}>{estado}</span>
+                              </div>
+                              {tieneDescuento && <div className="mb-1"><span className="badge bg-success">Descuento</span></div>}
+                              <div className="d-flex justify-content-between" style={{ fontSize: '0.82rem', color: '#555' }}>
+                                <span>Esperado: <strong>Bs {montoEsperado}</strong></span>
+                                <span>Pagado: <strong style={{ color: '#198754' }}>Bs {montoPagado}</strong></span>
+                              </div>
+                              {saldoPendiente > 0 && (
+                                <div style={{ fontSize: '0.82rem', color: '#dc3545' }}>
+                                  Saldo pendiente: <strong>Bs {saldoPendiente}</strong>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
