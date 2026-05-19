@@ -71,8 +71,20 @@ const getQuickActions = (userRole) => {
 const formatMessage = (text) => {
   if (!text) return "";
 
+  // 1. Extraer y proteger URLs utilizando un marcador seguro que no contiene markdown (*, _, etc.)
+  const urls = [];
+  let formatted = text.replace(
+    /(https?:\/\/[^\s<>"]+)/g,
+    (url) => {
+      const placeholder = `%%URLPLACEHOLDER${urls.length}%%`;
+      urls.push({ placeholder, url });
+      return placeholder;
+    }
+  );
+
+  // 2. Aplicar formato de WhatsApp / Markdown
   // Convertir **texto** a <strong> (WhatsApp bold)
-  let formatted = text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  formatted = formatted.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 
   // Convertir *texto* a <strong> (WhatsApp bold - una sola estrella)
   formatted = formatted.replace(/\*([^*\n]+?)\*/g, "<strong>$1</strong>");
@@ -83,17 +95,17 @@ const formatMessage = (text) => {
   // Convertir bullet points al inicio de línea
   formatted = formatted.replace(/^\* /gm, "• ");
 
-   // Convertir URLs en enlaces clicables (https:// o http://)
-  formatted = formatted.replace(
-    /(https?:\/\/[^\s<>"]+)/g,
-    (url) =>
+  // 3. Restaurar URLs con su enlace HTML correspondiente (manteniendo intactas sus rutas y caracteres)
+  urls.forEach(({ placeholder, url }) => {
+    const anchorHtml =
       `<a href="${url}" target="_blank" rel="noopener noreferrer" ` +
       `style="color:#0d6efd;text-decoration:underline;word-break:break-all;" ` +
       `title="Abrir archivo">` +
       `<i class="fas fa-file-download me-1" style="color:#dc3545;"></i>` +
       `Descargar` +
-      `</a>`,
-  );
+      `</a>`;
+    formatted = formatted.replace(placeholder, anchorHtml);
+  });
 
   // Convertir saltos de línea
   formatted = formatted.replace(/\n/g, "<br/>");
