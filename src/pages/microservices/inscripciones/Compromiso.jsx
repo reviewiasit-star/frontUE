@@ -629,10 +629,6 @@ const Compromiso = () => {
     }
   };
 
-  useEffect(() => {
-    if (form.id) cargarCompromiso(form.id);
-  }, [form.id]);
-
   // Cargar compromiso cuando se selecciona una inscripción
   useEffect(() => {
     if (inscripcionSeleccionada && inscripcionSeleccionada.id) {
