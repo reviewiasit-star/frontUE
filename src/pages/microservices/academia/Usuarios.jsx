@@ -398,22 +398,21 @@ function Usuarios() {
                 <p>
                   Esta acción eliminará <strong>casi toda</strong> la información operativa del sistema y reseteará los auto-increment a 0.
                 </p>
-                <p className="mb-2"><strong>Se preservarán únicamente:</strong></p>
+                <p className="mb-2"><strong>Se preservarán:</strong></p>
                 <ul className="mb-3">
-                  <li>✅ <strong>Usuarios</strong> (tabla usuarios)</li>
-                  <li>✅ <strong>Roles</strong> (tabla roles)</li>
-                  <li>✅ <strong>Estados de estudiante</strong> (tabla estados_estudiante)</li>
+                  <li>✅ <strong>Usuarios</strong> y <strong>Roles</strong></li>
+                  <li>✅ <strong>Estados de estudiante</strong></li>
+                  <li>✅ <strong>Bloques, niveles, cursos y becas configurados</strong></li>
                 </ul>
                 <p className="mb-2"><strong>Entre otras cosas, se eliminarán:</strong></p>
                 <ul className="mb-3 small">
-                  <li>Bloques, niveles, cursos y becas configurados</li>
                   <li>Estudiantes, inscripciones y compromisos económicos</li>
                   <li>Pagos (mensuales y realizados), ingresos</li>
                   <li>Servicios (catálogo y adquiridos por estudiantes)</li>
                   <li>Consultas y OCR de comprobantes</li>
                   <li><strong>Agente inteligente:</strong> documentos, chunks, embeddings, sesiones y mensajes</li>
                 </ul>
-                <p className="text-danger fw-bold mb-0">⚠️ Esta acción es irreversible. Deberás volver a cargar estructura académica y becas si las necesitas.</p>
+                <p className="text-danger fw-bold mb-0">⚠️ Esta acción es irreversible para los datos operativos eliminados.</p>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowWipeModal(false)} disabled={wiping}>Cancelar</button>

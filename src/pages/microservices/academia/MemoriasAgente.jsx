@@ -11,7 +11,7 @@ const TIPO_CONFIG = {
   otro:      { color: 'secondary', icon: 'fa-sticky-note', label: 'Otro' },
 };
 
-function MemoriasAgente() {
+function MemoriasAgente({ embedded }) {
   const [memorias, setMemorias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -84,7 +84,7 @@ function MemoriasAgente() {
   const inactivas = memorias.filter(m => !m.activa);
 
   return (
-    <div className="container-fluid py-4">
+    <div className={embedded ? "" : "container-fluid py-4"}>
       {/* Notificación */}
       {msg.texto && (
         <div className={`alert alert-${msg.tipo} alert-dismissible fade show position-fixed`}

@@ -55,7 +55,7 @@ function Login({ onLogin }) {
           return;
         }
 
-        if ((userRole === 'Administrador' || userRole === 'Director' || userRole === 'Secretaria') && !services.principal) {
+        if ((userRole === 'Administrador' || userRole === 'Director' || userRole === 'Secretaria' || userRole === 'Tienda') && !services.principal) {
           setError('POR EL MOMENTO NO ESTÁ EN SERVICIO ADMINISTRACIÓN ESTÁ EN MANTENIMIENTO');
           setSuccess(false);
           setLoading(false);
@@ -65,13 +65,13 @@ function Login({ onLogin }) {
         }
 
         // Validar el rol aquí
-        if (userRole === 'Administrador' || userRole === 'Director' || userRole === 'Secretaria' || userRole === 'Cajero') {
+        if (userRole === 'Administrador' || userRole === 'Director' || userRole === 'Secretaria' || userRole === 'Cajero' || userRole === 'Tienda') {
           setSuccess(true);
           setTimeout(() => {
             if (onLogin) onLogin(result.user);
           }, 1000);
         } else {
-          setError('Acceso denegado. Solo administradores, directores, secretarias y cajeros pueden acceder al sistema.');
+          setError('Acceso denegado. Usuario no tiene un rol válido para acceder al sistema.');
           setSuccess(false);
         }
       } else {

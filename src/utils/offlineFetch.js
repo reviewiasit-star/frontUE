@@ -359,8 +359,7 @@ export function setupOfflineFetch() {
     const isApiRequest =
       urlString &&
       (urlString.includes("/api/") ||
-        urlString.includes("localhost:3001") ||
-        urlString.includes("localhost:3002"));
+        urlString.includes("localhost:3001"));
 
     // Si no es request de API, usar fetch original directamente (sin overhead)
     if (!isApiRequest) {

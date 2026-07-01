@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./AgenteInteligenteFloating.css";
 import HistorialChatWhatsAppPanel from "./HistorialChatWhatsAppPanel";
+import MemoriasAgente from "../pages/microservices/academia/MemoriasAgente";
 import { BACKEND_PRINCIPAL_ORIGIN } from "../config/apiConfig";
 
 // Clave de historial: distinta para admin vs director/secretaria (LangChain)
@@ -116,6 +117,7 @@ const formatMessage = (text) => {
 function AgenteInteligenteFloating({ user: userProp }) {
   const [isOpen, setIsOpen] = useState(false);
   const [historialWhatsappOpen, setHistorialWhatsappOpen] = useState(false);
+  const [memoriasAgenteOpen, setMemoriasAgenteOpen] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [conversacion, setConversacion] = useState([]);
   const [sesionId, setSesionId] = useState(null);
@@ -396,14 +398,24 @@ function AgenteInteligenteFloating({ user: userProp }) {
                   <i className="fas fa-bolt"></i> IA
                 </span>
                 {userRole === "Administrador" && (
-                  <button
-                    type="button"
-                    className="ai-btn-icon"
-                    onClick={() => setHistorialWhatsappOpen(true)}
-                    title="Ver historial de chat (WhatsApp con padres)"
-                  >
-                    <i className="fas fa-comments"></i>
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className="ai-btn-icon"
+                      onClick={() => setMemoriasAgenteOpen(true)}
+                      title="Ver Memoria Agente"
+                    >
+                      <i className="fas fa-brain"></i>
+                    </button>
+                    <button
+                      type="button"
+                      className="ai-btn-icon"
+                      onClick={() => setHistorialWhatsappOpen(true)}
+                      title="Ver historial de chat (WhatsApp con padres)"
+                    >
+                      <i className="fas fa-comments"></i>
+                    </button>
+                  </>
                 )}
                 {conversacion.length > 0 && (
                   <button
@@ -614,6 +626,41 @@ function AgenteInteligenteFloating({ user: userProp }) {
             </div>
             <div className="ai-historial-body">
               <HistorialChatWhatsAppPanel embedded />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {memoriasAgenteOpen && (
+        <div
+          className="ai-historial-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ai-memoria-title"
+          onClick={(e) =>
+            e.target === e.currentTarget && setMemoriasAgenteOpen(false)
+          }
+        >
+          <div
+            className="ai-historial-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="ai-historial-header">
+              <div className="ai-historial-title-wrap">
+                <i className="fas fa-brain text-primary"></i>
+                <h5 id="ai-memoria-title">Memoria Agente</h5>
+              </div>
+              <button
+                type="button"
+                className="ai-btn-icon"
+                onClick={() => setMemoriasAgenteOpen(false)}
+                title="Cerrar"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="ai-historial-body" style={{ overflowY: 'auto' }}>
+              <MemoriasAgente embedded />
             </div>
           </div>
         </div>

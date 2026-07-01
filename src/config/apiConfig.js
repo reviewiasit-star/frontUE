@@ -1,12 +1,10 @@
-// URLs fijas de Railway (respaldo si no hay .env en Vercel)
+// URL fija de Railway para el backend principal
 const RAILWAY_BACKEND_PRINCIPAL = 'https://backprincipalemiwch-production.up.railway.app';
-const RAILWAY_BACKEND_CAJAS = 'https://backendcajasemiwch-production.up.railway.app';
 
-
-function isLocalHost() {
+function isLocalEnvironment() {
   if (typeof window === 'undefined') return true;
   const host = window.location.hostname;
-  return host === 'localhost' || host === '127.0.0.1';
+  return host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.') || host.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./);
 }
 
 function normalizeBase(url) {
@@ -16,117 +14,29 @@ function normalizeBase(url) {
 function resolvePrincipalOrigin() {
   const fromEnv = import.meta.env.VITE_API_URL;
   if (fromEnv) return normalizeBase(fromEnv);
-  if (isLocalHost()) {
+  if (isLocalEnvironment()) {
     return `http://${typeof window !== 'undefined' ? window.location.hostname : 'localhost'}:3001`;
   }
   return RAILWAY_BACKEND_PRINCIPAL;
 }
 
-function resolveCajasOrigin() {
-  const fromEnv = import.meta.env.VITE_API_CAJAS_URL;
-  if (fromEnv) return normalizeBase(fromEnv);
-  if (isLocalHost()) {
-    return `http://${typeof window !== 'undefined' ? window.location.hostname : 'localhost'}:3002`;
-  }
-  if (RAILWAY_BACKEND_CAJAS) return RAILWAY_BACKEND_CAJAS;
-  return `http://${typeof window !== 'undefined' ? window.location.hostname : 'localhost'}:3002`;
-}
-
 export const BACKEND_PRINCIPAL_ORIGIN = resolvePrincipalOrigin();
-export const BACKEND_CAJAS_ORIGIN = resolveCajasOrigin();
 export const BACKEND_PRINCIPAL = `${BACKEND_PRINCIPAL_ORIGIN}/api`;
-export const BACKEND_CAJAS = `${BACKEND_CAJAS_ORIGIN}/api`;
 
-// Endpoints que van al backend-cajas (solo para rol Cajero)
-const ENDPOINTS_CAJAS = [
-  '/compromiso-economico',
-  '/pagos-realizados',
-  '/comprobantes',
-  '/estudiantes-compromisos-concluidos',
-  '/servicios-estudiante',
-  '/servicios',
-  '/estudiantes',
-  '/becas',
-  '/niveles',
-  '/ingresos-academicos',
-  '/ocr-comprobantes'
-];
+// Mantener BACKEND_CAJAS como alias del principal para retrocompatibilidad
+// (por si algún archivo aún lo importa directamente)
+export const BACKEND_CAJAS_ORIGIN = BACKEND_PRINCIPAL_ORIGIN;
+export const BACKEND_CAJAS = BACKEND_PRINCIPAL;
 
-const ENDPOINTS_DASHBOARD_PAGOS = ['/dashboard/pagos'];
-
-const ENDPOINTS_REPORTES = [
-  '/reporte-pagos-estudiantes',
-  '/estudiantes-compromisos-concluidos'
-];
-
+/**
+ * Retorna la URL base del API para un endpoint dado.
+ * Todo el tráfico va al backend principal (ya no existe backend-cajas separado).
+ */
 export function getApiUrl(endpoint, userRole = null) {
-  if (!userRole) {
-    try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      userRole = user.rol;
-    } catch {
-      // usar backend principal por defecto
-    }
-  }
-
-  if (endpoint.startsWith('/auth')) {
-    return BACKEND_PRINCIPAL;
-  }
-
-  if (userRole === 'Cajero' && ENDPOINTS_CAJAS.some((ep) => endpoint.startsWith(ep))) {
-    return BACKEND_CAJAS;
-  }
-
-  if (
-    (userRole === 'Administrador' || userRole === 'Director') &&
-    endpoint.startsWith('/ingresos-academicos')
-  ) {
-    return BACKEND_PRINCIPAL;
-  }
-
-  if (
-    (userRole === 'Administrador' || userRole === 'Director') &&
-    ENDPOINTS_REPORTES.some((ep) => endpoint.startsWith(ep))
-  ) {
-    return BACKEND_PRINCIPAL;
-  }
-
-  if (userRole === 'Cajero' && ENDPOINTS_REPORTES.some((ep) => endpoint.startsWith(ep))) {
-    return BACKEND_CAJAS;
-  }
-
-  if (
-    (userRole === 'Administrador' || userRole === 'Director') &&
-    ENDPOINTS_DASHBOARD_PAGOS.some((ep) => endpoint.startsWith(ep))
-  ) {
-    return BACKEND_PRINCIPAL;
-  }
-
-  if (userRole === 'Cajero' && ENDPOINTS_DASHBOARD_PAGOS.some((ep) => endpoint.startsWith(ep))) {
-    return BACKEND_CAJAS;
-  }
-
-  if (ENDPOINTS_CAJAS.some((ep) => endpoint.startsWith(ep)) && userRole !== 'Cajero') {
-    return BACKEND_PRINCIPAL;
-  }
-
   return BACKEND_PRINCIPAL;
 }
 
 export function getBaseApiUrl(userRole = null) {
-  if (!userRole) {
-    try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      userRole = user.rol;
-    } catch {
-      return BACKEND_PRINCIPAL;
-    }
-  }
-
-  if (userRole === 'Cajero') {
-    return BACKEND_CAJAS;
-  }
-
   return BACKEND_PRINCIPAL;
 }
 
@@ -155,12 +65,8 @@ export async function checkServiceAvailability(baseUrl, timeout = 5000) {
 }
 
 export async function checkAllServices() {
-  const [principal, cajas] = await Promise.all([
-    checkServiceAvailability(BACKEND_PRINCIPAL),
-    checkServiceAvailability(BACKEND_CAJAS)
-  ]);
-
-  return { principal, cajas };
+  const principal = await checkServiceAvailability(BACKEND_PRINCIPAL);
+  return { principal, cajas: principal }; // cajas = principal ahora
 }
 
 export default {

@@ -5,6 +5,7 @@ import Index from './pages/microservices/common/Index';
 import RecuperarPassword from './pages/microservices/common/RecuperarPassword';
 import RestablecerPassword from './pages/microservices/common/RestablecerPassword';
 import EnvioComprobantes from './pages/microservices/common/EnvioComprobantes';
+import RegistroEstudiante from './pages/microservices/academia/RegistroEstudiante';
 import AuthService from './services/authService';
 
 function App() {
@@ -86,6 +87,7 @@ function App() {
         <Route path="/recuperar-password" element={<RecuperarPassword />} />
         <Route path="/restablecer-password" element={<RestablecerPassword />} />
         <Route path="/envio-comprobantes" element={<EnvioComprobantes />} />
+        <Route path="/RegistroEstudiante" element={<RegistroEstudiante />} />
 
         {/* Rutas autenticadas: permitir que Index maneje todo el resto */}
         <Route 

@@ -1,0 +1,544 @@
+/* Estilo básico y funcional para reporte de ventas */
+.reporte-ventas-root {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.reporte-ventas-header {
+  margin-bottom: 2rem;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.reporte-ventas-header h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.btn-exportar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-exportar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.btn-exportar:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Filtros */
+.reporte-ventas-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.filtro-grupo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 180px;
+}
+
+.filtro-grupo i {
+  position: absolute;
+  left: 0.75rem;
+  color: #667eea;
+  z-index: 2;
+}
+
+.filtro-grupo input,
+.filtro-grupo select {
+  width: 100%;
+  padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: #f8f9fa;
+  outline: none;
+  transition: border 0.2s;
+}
+
+.filtro-grupo input:focus,
+.filtro-grupo select:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+/* Estilos para el filtro de estudiantes con autocompletado */
+.estudiante-filtro {
+  position: relative;
+}
+
+.estudiante-input-container {
+  position: relative;
+  width: 100%;
+}
+
+.estudiante-input-container input {
+  padding-right: 2.5rem;
+}
+
+.estudiante-input-container input:disabled {
+  background: #e9ecef;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-limpiar-estudiante {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.7rem;
+  transition: background 0.2s;
+}
+
+.btn-limpiar-estudiante:hover {
+  background: #c82333;
+}
+
+.sugerencias-estudiantes {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.sugerencia-estudiante {
+  padding: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.2s;
+}
+
+.sugerencia-estudiante:hover {
+  background: #f8f9fa;
+}
+
+.sugerencia-estudiante:last-child {
+  border-bottom: none;
+}
+
+.estudiante-nombre {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.estudiante-codigo {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+/* Estilos para el checkbox de filtro */
+.filtro-checkbox {
+  min-width: auto;
+  flex: 0 0 auto;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.checkbox-container:hover {
+  background: #e9ecef;
+  border-color: #667eea;
+}
+
+.checkbox-container input[type="checkbox"] {
+  display: none;
+}
+
+.checkmark {
+  width: 18px;
+  height: 18px;
+  background: white;
+  border: 2px solid #ddd;
+  border-radius: 3px;
+  margin-right: 0.5rem;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.checkbox-container input[type="checkbox"]:checked + .checkmark {
+  background: #667eea;
+  border-color: #667eea;
+}
+
+.checkbox-container input[type="checkbox"]:checked + .checkmark::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.checkbox-label i {
+  color: #dc3545;
+}
+
+/* Tabla */
+.reporte-ventas-table-container {
+  overflow-x: auto;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.reporte-ventas-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.reporte-ventas-table thead th {
+  background: #667eea;
+  color: #fff;
+  font-weight: 600;
+  padding: 1rem 0.75rem;
+  text-align: left;
+  border-bottom: 2px solid #5a67d8;
+}
+
+.reporte-ventas-table tbody tr:nth-child(even) {
+  background: #f8f9fa;
+}
+
+.reporte-ventas-table tbody tr:hover {
+  background: #e9ecef;
+}
+
+.reporte-ventas-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #dee2e6;
+  vertical-align: middle;
+}
+
+.reporte-ventas-table tfoot th {
+  background: #343a40;
+  color: #fff;
+  font-weight: 600;
+  padding: 1rem 0.75rem;
+  border-top: 2px solid #495057;
+}
+
+.reporte-ventas-table tfoot th.total-venta {
+  color: #28a745;
+}
+
+/* Estilos para elementos específicos */
+.producto-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.producto-imagen {
+  width: 35px;
+  height: 35px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid #ddd;
+}
+
+.producto-placeholder {
+  width: 35px;
+  height: 35px;
+  border-radius: 4px;
+  background: #f8f9fa;
+  border: 1px dashed #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+}
+
+.producto-nombre {
+  font-weight: 500;
+  color: #333;
+}
+
+.badge-pago {
+  display: inline-block;
+  padding: 0.25em 0.75em;
+  border-radius: 0.5em;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #fff;
+  background: #6c757d;
+}
+
+.badge-pago.efectivo {
+  background: #28a745;
+}
+
+.badge-pago.qr {
+  background: #007bff;
+}
+
+.cliente-nombre {
+  font-weight: 500;
+  color: #007bff;
+}
+
+.cliente-sin-asignar {
+  font-weight: 500;
+  color: #dc3545;
+  font-style: italic;
+  background: #f8d7da;
+  padding: 0.25em 0.5em;
+  border-radius: 0.25em;
+  font-size: 0.85rem;
+}
+
+.total-venta {
+  font-weight: 600;
+  color: #28a745;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-end {
+  text-align: right;
+}
+
+/* Paginación */
+.paginacion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+
+.paginacion-info {
+  font-size: 0.875rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.paginacion-controles {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-pagina {
+  background: #fff;
+  border: 1px solid #dee2e6;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-pagina:hover:not(:disabled) {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.btn-pagina:disabled {
+  background: #f8f9fa;
+  color: #adb5bd;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .reporte-ventas-root {
+    padding: 1rem;
+    margin: 1rem;
+  }
+  
+  .header-top {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .btn-exportar {
+    align-self: center;
+  }
+  
+  .reporte-ventas-filtros {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .filtro-grupo {
+    min-width: auto;
+  }
+  
+  .filtro-checkbox {
+    align-self: flex-start;
+  }
+  
+  .reporte-ventas-table thead th,
+  .reporte-ventas-table td {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .producto-imagen,
+  .producto-placeholder {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .paginacion {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .sugerencias-estudiantes {
+    max-height: 150px;
+  }
+}
+
+/* Estilos para productos expandibles */
+.btn-expandir-productos {
+  background: none;
+  border: none;
+  color: #667eea;
+  cursor: pointer;
+  padding: 0.25rem;
+  margin-left: 0.5rem;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.btn-expandir-productos:hover {
+  background: rgba(102, 126, 234, 0.1);
+  transform: scale(1.1);
+}
+
+.fila-producto-detalle {
+  background: #f8f9fa !important;
+  border-left: 3px solid #667eea;
+}
+
+.fila-producto-detalle td {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.producto-detalle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.indentacion {
+  width: 20px;
+  height: 1px;
+  background: #667eea;
+}
+
+.subtotal-producto {
+  color: #28a745;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.precio-unitario {
+  color: #6c757d;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.cantidad-producto {
+  font-weight: 600;
+  color: #495057;
+  text-align: center;
+}
+
+/* Animación para expandir/contraer */
+.fila-producto-detalle {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

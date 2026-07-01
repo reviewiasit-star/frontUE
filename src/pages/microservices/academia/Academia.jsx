@@ -244,16 +244,62 @@ function Academia() {
 
 // Componente Modal para gestión de bloques
 function BloqueModal({ isOpen, onClose, bloque, onSuccess, showSuccess, showError }) {
-  const [formData, setFormData] = useState({ descripcion: '' });
+  const [formData, setFormData] = useState({ descripcion: '', logo_url: '' });
   const [loading, setLoading] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [previewLogo, setPreviewLogo] = useState(null);
+  const fileInputRef = React.useRef(null);
 
   useEffect(() => {
     if (bloque) {
-      setFormData({ descripcion: bloque.descripcion });
+      setFormData({ descripcion: bloque.descripcion, logo_url: bloque.logo_url || '' });
+      setPreviewLogo(bloque.logo_url || null);
     } else {
-      setFormData({ descripcion: '' });
+      setFormData({ descripcion: '', logo_url: '' });
+      setPreviewLogo(null);
     }
-  }, [bloque]);
+  }, [bloque, isOpen]);
+
+  // Manejar selección de archivo de logo
+  const handleLogoChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Preview local inmediato
+    const localUrl = URL.createObjectURL(file);
+    setPreviewLogo(localUrl);
+
+    // Subir al servidor
+    setUploadingLogo(true);
+    const token = localStorage.getItem('token');
+    try {
+      const fd = new FormData();
+      fd.append('logo', file);
+      const res = await fetch(`${API_URL}/upload/upload-logo`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: fd
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFormData(prev => ({ ...prev, logo_url: data.filePath }));
+      } else {
+        showError('Error', 'No se pudo subir el logo: ' + (data.error || ''));
+        setPreviewLogo(bloque?.logo_url || null);
+      }
+    } catch {
+      showError('Error', 'Error al subir el logo');
+      setPreviewLogo(bloque?.logo_url || null);
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleQuitarLogo = () => {
+    setPreviewLogo(null);
+    setFormData(prev => ({ ...prev, logo_url: '' }));
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -304,23 +350,79 @@ function BloqueModal({ isOpen, onClose, bloque, onSuccess, showSuccess, showErro
           <form onSubmit={handleSubmit}>
             <div className="modal-body">
               <div className="mb-3">
-                <label className="form-label">Descripción del Bloque</label>
+                <label className="form-label fw-semibold">Descripción del Bloque</label>
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="Ej: BLOQUE INICIAL, BLOQUE PRIMARIA"
+                  placeholder="Ej: Sinai Montessori, Nuevo Amanecer"
                   value={formData.descripcion}
                   onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
                   required
                   disabled={loading}
                 />
               </div>
+
+              {/* Sección de logo */}
+              <div className="mb-3">
+                <label className="form-label fw-semibold">
+                  <i className="fas fa-image me-2 text-primary"></i>
+                  Logo del Bloque
+                  <span className="text-muted fw-normal ms-2" style={{ fontSize: '0.82rem' }}>(aparecerá en los comprobantes de pago)</span>
+                </label>
+
+                {/* Preview del logo */}
+                {previewLogo && (
+                  <div className="mb-2 d-flex align-items-center gap-3">
+                    <img
+                      src={previewLogo.startsWith('blob:') ? previewLogo : (previewLogo.startsWith('/') ? previewLogo : `/${previewLogo}`)}
+                      alt="Logo del bloque"
+                      style={{
+                        width: 90,
+                        height: 60,
+                        objectFit: 'contain',
+                        border: '1px solid #dee2e6',
+                        borderRadius: 8,
+                        background: '#f8f9fa',
+                        padding: 4
+                      }}
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-danger"
+                      onClick={handleQuitarLogo}
+                      disabled={loading || uploadingLogo}
+                    >
+                      <i className="fas fa-trash me-1"></i>Quitar logo
+                    </button>
+                  </div>
+                )}
+
+                <div className="d-flex align-items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="form-control"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    onChange={handleLogoChange}
+                    disabled={loading || uploadingLogo}
+                    style={{ maxWidth: 300 }}
+                  />
+                  {uploadingLogo && (
+                    <span className="text-primary">
+                      <span className="spinner-border spinner-border-sm me-1"></span>
+                      Subiendo...
+                    </span>
+                  )}
+                </div>
+                <small className="text-muted">Formatos: JPG, PNG. Máx 5 MB.</small>
+              </div>
             </div>
             <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>
+              <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading || uploadingLogo}>
                 Cancelar
               </button>
-              <button type="submit" className="btn btn-primary" disabled={loading}>
+              <button type="submit" className="btn btn-primary" disabled={loading || uploadingLogo}>
                 {loading ? (
                   <>
                     <span className="spinner-border spinner-border-sm me-2"></span>
@@ -436,9 +538,25 @@ function GestionBloques({ bloques, niveles, cursos, showSuccess, showError, show
                 }}
               >
                 <div className="card-body">
+                  {/* Logo del bloque (si tiene) */}
+                  {bloque.logo_url && (
+                    <div className="text-center mb-3">
+                      <img
+                        src={bloque.logo_url.startsWith('/') ? bloque.logo_url : `/${bloque.logo_url}`}
+                        alt={`Logo ${bloque.descripcion}`}
+                        style={{
+                          maxHeight: 60,
+                          maxWidth: '100%',
+                          objectFit: 'contain',
+                          borderRadius: 6
+                        }}
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    </div>
+                  )}
                   <div className="d-flex justify-content-between align-items-start mb-3">
                     <h5 className="card-title mb-0 text-primary">
-                      <i className="fas fa-layer-group me-2"></i>
+                      {!bloque.logo_url && <i className="fas fa-layer-group me-2"></i>}
                       {bloque.descripcion}
                     </h5>
                     <div className="dropdown">
@@ -603,12 +721,26 @@ function BloqueDetailModal({ isOpen, onClose, bloque, niveles, cursos, onDataCha
     bloquesNiveles.some(nivel => nivel.id === curso.nivel_id)
   );
 
-  // Debug logs
-  console.log('Debug - Bloque seleccionado:', bloque);
-  console.log('Debug - Todos los niveles:', niveles);
-  console.log('Debug - Niveles filtrados para este bloque:', bloquesNiveles);
-  console.log('Debug - Todos los cursos:', cursos);
-  console.log('Debug - Cursos filtrados para este bloque:', bloquesCursos);
+  // Resetear TODOS los estados cuando el modal se abre o cambia de bloque
+  // Esto garantiza que los formularios siempre empiecen vacíos
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab('niveles');
+      setViewMode('niveles');
+      setSelectedNivel(null);
+      setShowNivelForm(false);
+      setShowCursoForm(false);
+      setEditingNivel(null);
+      setEditingCurso(null);
+      setNivelFormData({
+        nombre: '',
+        descripcion: '',
+        precio: '',
+        meses: ['febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre']
+      });
+      setCursoFormData({ nombre: '', nivel_id: '', turno: '', hora_inicio: '', hora_fin: '' });
+    }
+  }, [isOpen, bloque?.id]);
 
   const resetNivelForm = () => {
     setNivelFormData({ 
@@ -870,6 +1002,7 @@ function BloqueDetailModal({ isOpen, onClose, bloque, niveles, cursos, onDataCha
                     <button 
                       className="btn btn-primary"
                       onClick={() => {
+                        // Siempre limpiar el formulario antes de mostrar (incluso si ya estaba abierto)
                         setEditingNivel(null);
                         setNivelFormData({
                           nombre: '',
@@ -1108,7 +1241,9 @@ function BloqueDetailModal({ isOpen, onClose, bloque, niveles, cursos, onDataCha
                     <button 
                       className="btn btn-primary"
                       onClick={() => {
+                        // Siempre limpiar el formulario antes de mostrar (incluso si ya estaba abierto)
                         setEditingCurso(null);
+                        setCursoFormData({ nombre: '', nivel_id: '', turno: '', hora_inicio: '', hora_fin: '' });
                         setShowCursoForm(true);
                       }}
                       disabled={bloquesNiveles.length === 0}

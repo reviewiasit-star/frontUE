@@ -6,6 +6,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from '../../../assets/img/logo.jpg';
 import WhatsAppPDFSender from '../../../components/WhatsAppPDFSender';
+import ModalDetalles from '../../../components/ModalDetalles';
 
 const Reportes = () => {
   const [estudiantes, setEstudiantes] = useState([]);
@@ -23,6 +24,7 @@ const Reportes = () => {
   const [filtroNivelId, setFiltroNivelId] = useState('todos');
   const [filtroCursoId, setFiltroCursoId] = useState('todos');
   const [showWhatsAppSender, setShowWhatsAppSender] = useState(false);
+  const [showModalDetalles, setShowModalDetalles] = useState(false);
   const [pdfWhatsAppBlob, setPdfWhatsAppBlob] = useState(null);
   const [seleccionIds, setSeleccionIds] = useState(new Set());
   const [telefonoWhatsApp, setTelefonoWhatsApp] = useState('');
@@ -301,10 +303,11 @@ const Reportes = () => {
   const mesesAMostrar = meses.slice(
     meses.indexOf(mesInicio),
     meses.indexOf(mesFin) + 1
-  );
+  ).filter(m => m !== 'Enero' && m !== 'Diciembre');
 
   // Función para generar PDF del reporte
-  const generarPDF = () => {
+  const generarPDF = (datosPDF) => {
+    const dataAUsar = Array.isArray(datosPDF) ? datosPDF : estudiantesFiltrados;
     try {
       // A3 (más ancho) para que las columnas de meses no se vean tan pequeñas
       const doc = new jsPDF('landscape', 'mm', 'a3');
@@ -315,12 +318,11 @@ const Reportes = () => {
       const numColumnasMeses = mesesAMostrar.length;
       
       // Anchos fijos para columnas básicas
-      const anchoNombre = 45;
-      const anchoCI = 25;
+      const anchoNombre = 40;
       const anchoNivel = 30;
       const anchoEstado = 25;
       const anchoTotal = 28;
-      const anchoFijoTotal = anchoNombre + anchoCI + anchoNivel + anchoEstado + (anchoTotal * 2);
+      const anchoFijoTotal = anchoNombre + anchoNivel + anchoEstado + (anchoTotal * 2);
       
       // Calcular ancho para cada mes (distribuir el espacio restante)
       const anchoRestante = anchoDisponible - anchoFijoTotal;
@@ -328,16 +330,16 @@ const Reportes = () => {
       
       // Cargar logo
       const img = new window.Image();
-      img.src = logo;
+      const bloqueSeleccionado = bloques.find(b => String(b.id) === String(filtroBloqueId));
+      img.src = (bloqueSeleccionado && bloqueSeleccionado.logo_url) ? bloqueSeleccionado.logo_url : logo;
       
       const generarTabla = () => {
         // Preparar datos para la tabla con formato más compacto
         const tableData = [];
         
-        estudiantesFiltrados.forEach((estudiante) => {
+        dataAUsar.forEach((estudiante) => {
           const row = [
             estudiante.nombre,
-            estudiante.ci_estudiante || '',
             estudiante.nivel_nombre || '',
             estudiante.estado_compromiso || ''
           ];
@@ -378,7 +380,6 @@ const Reportes = () => {
         // Encabezados de la tabla (abreviados para ahorrar espacio)
         const headers = [
           'Nombre',
-          'CI',
           'Nivel',
           'Estado',
           ...mesesAMostrar.map(m => m.substring(0, 3).toUpperCase()), // Solo primeras 3 letras
@@ -389,14 +390,13 @@ const Reportes = () => {
         // Configurar estilos de columnas
         const columnStyles = {
           0: { cellWidth: anchoNombre, fontSize: 8 },
-          1: { cellWidth: anchoCI, fontSize: 8 },
-          2: { cellWidth: anchoNivel, fontSize: 8 },
-          3: { cellWidth: anchoEstado, fontSize: 8 }
+          1: { cellWidth: anchoNivel, fontSize: 8 },
+          2: { cellWidth: anchoEstado, fontSize: 8 }
         };
         
         // Agregar estilos para meses
         mesesAMostrar.forEach((_, index) => {
-          columnStyles[4 + index] = { 
+          columnStyles[3 + index] = { 
             cellWidth: anchoPorMes, 
             fontSize: 7,
             cellPadding: 2
@@ -404,8 +404,8 @@ const Reportes = () => {
         });
         
         // Agregar estilos para totales
+        columnStyles[3 + numColumnasMeses] = { cellWidth: anchoTotal, fontSize: 8, cellPadding: 2 };
         columnStyles[4 + numColumnasMeses] = { cellWidth: anchoTotal, fontSize: 8, cellPadding: 2 };
-        columnStyles[5 + numColumnasMeses] = { cellWidth: anchoTotal, fontSize: 8, cellPadding: 2 };
         
         // Generar tabla
         autoTable(doc, {
@@ -426,6 +426,17 @@ const Reportes = () => {
             fontSize: 10,
             cellPadding: 3
           },
+          didParseCell: function(data) {
+            if (data.section === 'body' && data.column.index >= 3 && data.column.index < 3 + numColumnasMeses) {
+              if (data.cell.raw && data.cell.raw.includes('Estado: Pendiente')) {
+                data.cell.styles.textColor = [220, 53, 69]; // Rojo
+                data.cell.styles.fontStyle = 'bold';
+              } else if (data.cell.raw && data.cell.raw.includes('Estado: Pagado')) {
+                data.cell.styles.textColor = [25, 135, 84]; // Verde
+                data.cell.styles.fontStyle = 'bold';
+              }
+            }
+          },
           columnStyles: columnStyles,
           margin: { top: 35, left: 8, right: 8 },
           tableWidth: 'auto',
@@ -445,9 +456,55 @@ const Reportes = () => {
         doc.setFontSize(8);
         doc.text(`Año: ${filtroAnio === 'todos' ? 'Todos' : filtroAnio} | Estado: ${filtroEstadoCompromiso === 'todos' ? 'Todos' : filtroEstadoCompromiso}`, 45, 26);
         doc.text(`Bloque: ${filtroBloqueId === 'todos' ? 'Todos' : filtroBloqueId} | Nivel: ${filtroNivelId === 'todos' ? 'Todos' : filtroNivelId} | Curso: ${filtroCursoId === 'todos' ? 'Todos' : filtroCursoId}`, 45, 31);
-        doc.text(`Meses: ${mesInicio} - ${mesFin} | Fecha: ${new Date().toLocaleDateString('es-BO')} | Total: ${estudiantesFiltrados.length} estudiantes`, 45, 36);
+        doc.text(`Meses: ${mesInicio} - ${mesFin} | Fecha: ${new Date().toLocaleDateString('es-BO')} | Total: ${dataAUsar.length} estudiantes`, 45, 36);
         
         generarTabla();
+        
+        // Generar página de resumen
+        doc.addPage();
+        doc.setFontSize(16);
+        doc.text('Resumen de Estado de Pagos', 15, 20);
+
+        let alDia = 0;
+        let conDeuda = [];
+
+        dataAUsar.forEach(est => {
+          const mesesPendientes = [];
+          mesesAMostrar.forEach(mes => {
+            const ep = obtenerEstadoPago(est, mes);
+            if (ep && (ep.estado === 'Pendiente' || ep.estado === 'Parcial')) {
+              mesesPendientes.push(mes);
+            }
+          });
+          if (mesesPendientes.length === 0) {
+            alDia++;
+          } else {
+            conDeuda.push({ nombre: est.nombre, meses: mesesPendientes.join(', ') });
+          }
+        });
+
+        doc.setFontSize(12);
+        doc.setTextColor(25, 135, 84); // Verde
+        doc.text(`Estudiantes al día: ${alDia}`, 15, 32);
+        
+        doc.setTextColor(220, 53, 69); // Rojo
+        doc.text(`Estudiantes que faltan cancelar: ${conDeuda.length}`, 15, 42);
+        
+        doc.setTextColor(0, 0, 0);
+
+        if (conDeuda.length > 0) {
+          doc.setFontSize(14);
+          doc.text('Detalle de estudiantes con deudas pendientes:', 15, 55);
+          
+          const deudoresData = conDeuda.map(d => [d.nombre, d.meses]);
+          autoTable(doc, {
+            startY: 60,
+            head: [['Nombre del Estudiante', 'Meses Pendientes']],
+            body: deudoresData,
+            styles: { fontSize: 10 },
+            headStyles: { fillColor: [220, 53, 69] }
+          });
+        }
         
         // Guardar PDF
         const nombreArchivo = `Reporte_Pagos_${filtroAnio}_${new Date().getTime()}.pdf`;
@@ -461,9 +518,55 @@ const Reportes = () => {
         doc.setFontSize(8);
         doc.text(`Año: ${filtroAnio === 'todos' ? 'Todos' : filtroAnio} | Estado: ${filtroEstadoCompromiso === 'todos' ? 'Todos' : filtroEstadoCompromiso}`, 8, 26);
         doc.text(`Bloque: ${filtroBloqueId === 'todos' ? 'Todos' : filtroBloqueId} | Nivel: ${filtroNivelId === 'todos' ? 'Todos' : filtroNivelId} | Curso: ${filtroCursoId === 'todos' ? 'Todos' : filtroCursoId}`, 8, 31);
-        doc.text(`Meses: ${mesInicio} - ${mesFin} | Fecha: ${new Date().toLocaleDateString('es-BO')} | Total: ${estudiantesFiltrados.length} estudiantes`, 8, 36);
+        doc.text(`Meses: ${mesInicio} - ${mesFin} | Fecha: ${new Date().toLocaleDateString('es-BO')} | Total: ${dataAUsar.length} estudiantes`, 8, 36);
         
         generarTabla();
+        
+        // Generar página de resumen
+        doc.addPage();
+        doc.setFontSize(16);
+        doc.text('Resumen de Estado de Pagos', 15, 20);
+
+        let alDia = 0;
+        let conDeuda = [];
+
+        dataAUsar.forEach(est => {
+          const mesesPendientes = [];
+          mesesAMostrar.forEach(mes => {
+            const ep = obtenerEstadoPago(est, mes);
+            if (ep && (ep.estado === 'Pendiente' || ep.estado === 'Parcial')) {
+              mesesPendientes.push(mes);
+            }
+          });
+          if (mesesPendientes.length === 0) {
+            alDia++;
+          } else {
+            conDeuda.push({ nombre: est.nombre, meses: mesesPendientes.join(', ') });
+          }
+        });
+
+        doc.setFontSize(12);
+        doc.setTextColor(25, 135, 84); // Verde
+        doc.text(`Estudiantes al día: ${alDia}`, 15, 32);
+        
+        doc.setTextColor(220, 53, 69); // Rojo
+        doc.text(`Estudiantes que faltan cancelar: ${conDeuda.length}`, 15, 42);
+        
+        doc.setTextColor(0, 0, 0);
+
+        if (conDeuda.length > 0) {
+          doc.setFontSize(14);
+          doc.text('Detalle de estudiantes con deudas pendientes:', 15, 55);
+          
+          const deudoresData = conDeuda.map(d => [d.nombre, d.meses]);
+          autoTable(doc, {
+            startY: 60,
+            head: [['Nombre del Estudiante', 'Meses Pendientes']],
+            body: deudoresData,
+            styles: { fontSize: 10 },
+            headStyles: { fillColor: [220, 53, 69] }
+          });
+        }
         
         const nombreArchivo = `Reporte_Pagos_${filtroAnio}_${new Date().getTime()}.pdf`;
         doc.save(nombreArchivo);
@@ -672,6 +775,25 @@ const Reportes = () => {
           </div>
         </div>
       </div>
+    );
+  }
+
+  if (showModalDetalles) {
+    return (
+      <ModalDetalles
+        isOpen={showModalDetalles}
+        onClose={() => setShowModalDetalles(false)}
+        estudiantes={estudiantesFiltrados}
+        mesesAMostrar={mesesAMostrar}
+        obtenerEstadoPago={obtenerEstadoPago}
+        mesInicio={mesInicio}
+        mesFin={mesFin}
+        setMesInicio={setMesInicio}
+        setMesFin={setMesFin}
+        meses={meses}
+        generarPDF={generarPDF}
+        filtroAnio={filtroAnio}
+      />
     );
   }
 
@@ -897,9 +1019,19 @@ const Reportes = () => {
                 <i className="fas fa-users me-2"></i>
                 Resumen de Pagos por Estudiante
               </h5>
-              <span className="badge bg-primary fs-6">
-                {estudiantesFiltrados.length} estudiantes
-              </span>
+              <div>
+                <button 
+                  className="btn btn-outline-primary btn-sm me-3"
+                  onClick={() => setShowModalDetalles(true)}
+                  title="Ver resumen completo y detallado"
+                >
+                  <i className="fas fa-expand-arrows-alt me-2"></i>
+                  Ampliar detalles
+                </button>
+                <span className="badge bg-primary fs-6">
+                  {estudiantesFiltrados.length} estudiantes
+                </span>
+              </div>
             </div>
             <div className="card-body">
               <div className="table-responsive">

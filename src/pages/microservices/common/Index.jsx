@@ -36,6 +36,12 @@ import ConfigUsuario from "./ConfigUsuario";
 import AgenteInteligenteFloating from "../../../components/AgenteInteligenteFloating";
 import OfflineIndicator from "../../../components/OfflineIndicator";
 
+// Módulo de Tienda
+import TiendaVentas from "../tienda/Tienda";
+import TiendaProductos from "../tienda/Productos";
+import TiendaReporteVentas from "../tienda/reports/ReporteVentas";
+import TiendaAlmacenes from "../tienda/Almacenes";
+
 // Componente wrapper que usa useNavigate dentro del Router
 function IndexContent({ onLogout, user }) {
   const [stats, setStats] = useState({
@@ -53,6 +59,8 @@ function IndexContent({ onLogout, user }) {
         navigate("/estudiantes");
       } else if (user.rol === "Cajero") {
         navigate("/dashboard-cajero");
+      } else if (user.rol === "Tienda") {
+        navigate("/tienda");
       }
     }
   }, [user.rol, navigate]);
@@ -294,22 +302,11 @@ function IndexContent({ onLogout, user }) {
                         <p>WhatsApp</p>
                       </Link>
                     </li>
-                    <li className="nav-item">
-                      <Link to="/historial-chat" className="nav-link">
-                        <i className="fas fa-comments"></i>
-                        <p>Historial Chat</p>
-                      </Link>
-                    </li>
+
                     <li className="nav-item">
                       <Link to="/documentos-agente" className="nav-link">
                         <i className="fas fa-file-alt"></i>
                         <p>Documentos Agente</p>
-                      </Link>
-                    </li>
-                    <li className="nav-item">
-                      <Link to="/memorias-agente" className="nav-link">
-                        <i className="fas fa-brain"></i>
-                        <p>Memoria del Agente</p>
                       </Link>
                     </li>
 
@@ -519,6 +516,66 @@ function IndexContent({ onLogout, user }) {
                     </li>
                   </>
                 )}
+
+                {/* Menú específico para el rol Tienda */}
+                {user.rol === "Tienda" && (
+                  <>
+                    <li className="nav-item active">
+                      <Link to="/tienda" className="nav-link">
+                        <i className="fas fa-store"></i>
+                        <p>Ventas / Tienda</p>
+                      </Link>
+                    </li>
+
+                    {/* Sección INVENTARIO */}
+                    <li className="nav-section">
+                      <span className="sidebar-mini-icon">
+                        <i className="fas fa-boxes"></i>
+                      </span>
+                      <h4 className="text-section">INVENTARIO</h4>
+                    </li>
+                    <li className="nav-item">
+                      <Link to="/tienda-almacenes" className="nav-link">
+                        <i className="fas fa-warehouse"></i>
+                        <p>Almacenes</p>
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link to="/tienda-productos" className="nav-link">
+                        <i className="fas fa-box-open"></i>
+                        <p>Productos</p>
+                      </Link>
+                    </li>
+
+                    {/* Sección REPORTES */}
+                    <li className="nav-section">
+                      <span className="sidebar-mini-icon">
+                        <i className="fas fa-chart-bar"></i>
+                      </span>
+                      <h4 className="text-section">REPORTES</h4>
+                    </li>
+                    <li className="nav-item">
+                      <Link to="/tienda-reporte-ventas" className="nav-link">
+                        <i className="fas fa-chart-line"></i>
+                        <p>Reporte de Ventas</p>
+                      </Link>
+                    </li>
+
+                    <li className="nav-item">
+                      <Link
+                        to="/cerrar-sesion"
+                        className="nav-link"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (onLogout) onLogout();
+                        }}
+                      >
+                        <i className="fas fa-sign-out-alt"></i>
+                        <p>Cerrar Sesión</p>
+                      </Link>
+                    </li>
+                  </>
+                )}
               </ul>
               {/* Enlace común a Configuración para todos los roles */}
               <div className="mt-3 px-3">
@@ -569,6 +626,8 @@ function IndexContent({ onLogout, user }) {
                     <Navigate to="/estudiantes" replace />
                   ) : user.rol === "Cajero" ? (
                     <DashboardCajero />
+                  ) : user.rol === "Tienda" ? (
+                    <Navigate to="/tienda" replace />
                   ) : (
                     <Navigate to="/" />
                   )
@@ -643,6 +702,19 @@ function IndexContent({ onLogout, user }) {
                     element={<DocumentosAgente />}
                   />
                   <Route path="/memorias-agente" element={<MemoriasAgente />} />
+                </>
+              )}
+
+              {/* Rutas específicas para el rol Tienda */}
+              {user.rol === "Tienda" && (
+                <>
+                  <Route path="/tienda" element={<TiendaVentas />} />
+                  <Route path="/tienda-almacenes" element={<TiendaAlmacenes />} />
+                  <Route path="/tienda-productos" element={<TiendaProductos />} />
+                  <Route
+                    path="/tienda-reporte-ventas"
+                    element={<TiendaReporteVentas />}
+                  />
                 </>
               )}
 

@@ -94,6 +94,29 @@ const ModoDispositivo = ({ isOpen, onClose, onNavigate, onLogout, user }) => {
       ];
     }
 
+    // Para tienda - menús específicos
+    if (user?.rol === 'Tienda') {
+      return [
+        ...commonItems,
+        {
+          icon: 'fas fa-store',
+          label: 'Ventas / Tienda',
+          path: 'tienda',
+          type: 'simple'
+        },
+        // Separador INVENTARIO
+        { type: 'separator', label: 'INVENTARIO' },
+        { icon: 'fas fa-warehouse', label: 'Almacenes', path: 'tienda-almacenes', type: 'simple' },
+        { icon: 'fas fa-box-open', label: 'Productos', path: 'tienda-productos', type: 'simple' },
+        // Separador REPORTES
+        { type: 'separator', label: 'REPORTES' },
+        { icon: 'fas fa-chart-line', label: 'Reporte de Ventas', path: 'tienda-reporte-ventas', type: 'simple' },
+        // Separador AJUSTES
+        { type: 'separator', label: 'AJUSTES' },
+        { icon: 'fas fa-user-cog', label: 'Configuración', path: 'configuracion', type: 'simple' }
+      ];
+    }
+
     // Fallback para otros roles
     return commonItems;
   };

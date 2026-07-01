@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNotification } from '../../../hooks/useNotification';
-import { getApiUrl } from '../../../config/apiConfig';
+import { getApiUrl, BACKEND_PRINCIPAL_ORIGIN } from '../../../config/apiConfig';
 import AuthService from '../../../services/authService';
 
 function ReporteInscripcion() {
@@ -379,55 +379,271 @@ function ReporteInscripcion() {
     });
   };
 
-  // Función para exportar a PDF
-  const exportarPDF = () => {
-    // Importar dinámicamente jspdf y jspdf-autotable
-    Promise.all([
-      import('jspdf'),
-      import('jspdf-autotable')
-    ]).then(([jsPDF, autoTable]) => {
-      const doc = new jsPDF.default();
+  // Función para exportar a PDF con diseño profesional
+  const exportarPDF = async () => {
+    try {
+      const [jsPDF, autoTable] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable')
+      ]);
+
+      const doc = new jsPDF.default({ orientation: 'landscape' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+
+      // --- Helper: cargar imagen a base64 ---
+      const cargarImagen = (src) => new Promise((resolve) => {
+        const img = new window.Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function () {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth || img.width;
+            canvas.height = img.naturalHeight || img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/jpeg'));
+          } catch { resolve(null); }
+        };
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+
+      // --- Determinar logo del bloque ---
+      let logoBase64 = null;
+      const bloqueSeleccionado = filtros.bloque_id
+        ? bloques.find(b => String(b.id) === String(filtros.bloque_id))
+        : null;
+      const bloqueNombre = bloqueSeleccionado?.descripcion || '';
+
+      if (bloqueSeleccionado?.logo_url) {
+        const logoUrl = bloqueSeleccionado.logo_url.startsWith('http')
+          ? bloqueSeleccionado.logo_url
+          : BACKEND_PRINCIPAL_ORIGIN + (bloqueSeleccionado.logo_url.startsWith('/') ? bloqueSeleccionado.logo_url : '/' + bloqueSeleccionado.logo_url);
+        logoBase64 = await cargarImagen(logoUrl);
+      }
+      // Fallback al logo genérico
+      if (!logoBase64) {
+        try {
+          const logoModule = await import('../../../assets/img/logo.jpg');
+          logoBase64 = await cargarImagen(logoModule.default);
+        } catch { /* sin logo */ }
+      }
+
+      // --- Colores institucionales ---
+      const colorPrimario = [26, 55, 100];       // Azul marino oscuro
+      const colorSecundario = [41, 128, 185];     // Azul medio
+      const colorAcento = [52, 152, 219];         // Azul claro
+      const colorTextoClaro = [255, 255, 255];
+      const colorTextoOscuro = [44, 62, 80];
+      const colorGrisClaro = [245, 247, 250];
+      const colorBorde = [189, 195, 199];
+
+      // === HEADER ===
+      // Franja superior
+      doc.setFillColor(...colorPrimario);
+      doc.rect(0, 0, pageWidth, 32, 'F');
+
+      // Logo
+      const logoX = 10;
+      const logoY = 4;
+      const logoW = 28;
+      const logoH = 24;
+      if (logoBase64) {
+        // Fondo blanco circular para el logo
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(logoX - 1, logoY - 1, logoW + 2, logoH + 2, 3, 3, 'F');
+        doc.addImage(logoBase64, 'JPEG', logoX, logoY, logoW, logoH);
+      }
+
+      // Título institucional
+      const tituloX = logoBase64 ? logoX + logoW + 8 : 14;
+      const tituloInstitucion = bloqueNombre ? bloqueNombre : 'Reporte General de Estudiantes';
       
-      // Título
-      doc.setFontSize(16);
-      doc.text('Reporte de Inscripción', 14, 15);
-      
-      // Fecha
-      doc.setFontSize(10);
-      const fecha = new Date().toLocaleDateString('es-ES');
-      doc.text(`Fecha: ${fecha}`, 14, 22);
-      doc.text(`Total de estudiantes: ${estudiantes.length}`, 14, 27);
-      
-      // Datos de la tabla
-      const datos = estudiantes.map(est => [
-        est.codigo_estudiante || 'N/A',
-        est.nombre,
-        est.apellido_paterno,
-        est.apellido_materno || '',
-        est.ci_estudiante,
-        est.turno || 'Sin turno',
-        est.nivel_nombre || 'Sin nivel',
-        est.curso_nombre || 'Sin curso',
-        est.bloque_nombre || 'Sin bloque',
+      doc.setTextColor(...colorTextoClaro);
+      doc.setFontSize(15);
+      doc.setFont(undefined, 'bold');
+      doc.text(tituloInstitucion, tituloX, 13);
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'normal');
+      doc.text('Reporte de Inscripción', tituloX, 20);
+      if (bloqueNombre) {
+        doc.setFontSize(10);
+        doc.text(`Bloque seleccionado`, tituloX, 26);
+      }
+
+      // Fecha y hora a la derecha
+      const ahora = new Date();
+      const fechaStr = ahora.toLocaleDateString('es-BO', { year: 'numeric', month: 'long', day: 'numeric' });
+      const horaStr = ahora.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' });
+      doc.setFontSize(9);
+      doc.setTextColor(...colorTextoClaro);
+      doc.text(`Fecha: ${fechaStr}`, pageWidth - 14, 12, { align: 'right' });
+      doc.text(`Hora: ${horaStr}`, pageWidth - 14, 18, { align: 'right' });
+      doc.text(`Total: ${estudiantes.length} estudiante${estudiantes.length !== 1 ? 's' : ''}`, pageWidth - 14, 24, { align: 'right' });
+
+      // Línea decorativa debajo del header
+      doc.setDrawColor(...colorAcento);
+      doc.setLineWidth(1.2);
+      doc.line(0, 32, pageWidth, 32);
+
+      // === FILTROS ACTIVOS ===
+      let startY = 38;
+      const filtrosTexto = [];
+      if (filtroRapido === 'turno_manana' || filtroActivo === 'turno_manana') filtrosTexto.push('Turno: Mañana');
+      if (filtroRapido === 'turno_tarde' || filtroActivo === 'turno_tarde') filtrosTexto.push('Turno: Tarde');
+      if (filtroRapido === 'inscritos' || filtroActivo === 'inscritos') filtrosTexto.push('Solo inscritos');
+      if (filtroRapido === 'sin_inscripcion' || filtroActivo === 'sin_inscripcion') filtrosTexto.push('Sin inscripción');
+      if (filtros.nivel_id) {
+        const nivel = niveles.find(n => String(n.id) === String(filtros.nivel_id));
+        if (nivel) filtrosTexto.push(`Nivel: ${nivel.nombre}`);
+      }
+      if (filtros.curso_id) {
+        const curso = cursos.find(c => String(c.id) === String(filtros.curso_id));
+        if (curso) filtrosTexto.push(`Curso: ${curso.nombre}`);
+      }
+      if (filtros.bloque_id && bloqueNombre) {
+        filtrosTexto.push(`Bloque: ${bloqueNombre}`);
+      }
+      if (filtros.anio) filtrosTexto.push(`Año: ${filtros.anio}`);
+
+      if (filtrosTexto.length > 0) {
+        doc.setFillColor(...colorGrisClaro);
+        doc.roundedRect(10, startY - 3, pageWidth - 20, 10, 2, 2, 'F');
+        doc.setFontSize(8);
+        doc.setTextColor(...colorSecundario);
+        doc.setFont(undefined, 'bold');
+        doc.text('Filtros aplicados:', 14, startY + 3);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(...colorTextoOscuro);
+        doc.text(filtrosTexto.join('  |  '), 50, startY + 3);
+        startY += 14;
+      } else {
+        startY += 4;
+      }
+
+      // === TABLA DE DATOS ===
+      const datos = estudiantes.map((est, idx) => [
+        idx + 1,
+        est.codigo_estudiante || '—',
+        `${est.nombre || ''} ${est.apellido_paterno || ''} ${est.apellido_materno || ''}`.trim(),
+        est.ci_estudiante || '—',
+        est.turno || '—',
+        est.nivel_nombre || '—',
+        est.curso_nombre || '—',
+        est.bloque_nombre || '—',
         est.estado_inscripcion || 'Sin inscripción'
       ]);
 
       autoTable.default(doc, {
-        head: [['Código', 'Nombre', 'Ap. Paterno', 'Ap. Materno', 'CI', 'Turno', 'Nivel', 'Curso', 'Bloque', 'Estado']],
+        head: [['#', 'Código', 'Nombre Completo', 'CI', 'Turno', 'Nivel', 'Curso', 'Bloque', 'Estado']],
         body: datos,
-        startY: 35,
-        styles: { fontSize: 6 },
-        headStyles: { fillColor: [13, 110, 253], textColor: 255, fontStyle: 'bold' },
-        alternateRowStyles: { fillColor: [245, 245, 245] }
+        startY: startY,
+        margin: { left: 10, right: 10 },
+        styles: {
+          fontSize: 7,
+          cellPadding: 3,
+          lineColor: colorBorde,
+          lineWidth: 0.3,
+          textColor: colorTextoOscuro,
+          font: 'helvetica'
+        },
+        headStyles: {
+          fillColor: colorPrimario,
+          textColor: colorTextoClaro,
+          fontStyle: 'bold',
+          fontSize: 7.5,
+          cellPadding: 4,
+          halign: 'center'
+        },
+        alternateRowStyles: {
+          fillColor: [240, 244, 248]
+        },
+        columnStyles: {
+          0: { cellWidth: 10, halign: 'center' },    // #
+          1: { cellWidth: 22, halign: 'center' },     // Código
+          2: { cellWidth: 'auto' },                    // Nombre
+          3: { cellWidth: 25, halign: 'center' },      // CI
+          4: { cellWidth: 20, halign: 'center' },      // Turno
+          5: { cellWidth: 30 },                        // Nivel
+          6: { cellWidth: 28 },                        // Curso
+          7: { cellWidth: 35 },                        // Bloque
+          8: { cellWidth: 25, halign: 'center' }       // Estado
+        },
+        didParseCell: (data) => {
+          // Colorear estado según valor
+          if (data.section === 'body' && data.column.index === 8) {
+            const val = String(data.cell.raw || '').toLowerCase();
+            if (val === 'activo') {
+              data.cell.styles.textColor = [39, 174, 96];
+              data.cell.styles.fontStyle = 'bold';
+            } else if (val === 'sin inscripción' || val === 'sin inscripcion') {
+              data.cell.styles.textColor = [231, 76, 60];
+              data.cell.styles.fontStyle = 'bold';
+            } else if (val === 'concluido') {
+              data.cell.styles.textColor = [41, 128, 185];
+              data.cell.styles.fontStyle = 'bold';
+            } else if (val === 'retirado') {
+              data.cell.styles.textColor = [155, 89, 182];
+              data.cell.styles.fontStyle = 'bold';
+            }
+          }
+        },
+        didDrawPage: (data) => {
+          // Footer en cada página
+          const totalPages = doc.internal.getNumberOfPages();
+          const currentPage = doc.internal.getCurrentPageInfo().pageNumber;
+
+          // Línea de separación del footer
+          doc.setDrawColor(...colorBorde);
+          doc.setLineWidth(0.5);
+          doc.line(10, pageHeight - 14, pageWidth - 10, pageHeight - 14);
+
+          // Texto del footer
+          doc.setFontSize(7);
+          doc.setTextColor(150, 150, 150);
+          doc.text(
+            `${tituloInstitucion} — Reporte generado el ${fechaStr} a las ${horaStr}`,
+            14,
+            pageHeight - 8
+          );
+          doc.text(
+            `Página ${currentPage} de ${totalPages}`,
+            pageWidth - 14,
+            pageHeight - 8,
+            { align: 'right' }
+          );
+
+          // Re-dibujar header en páginas 2+
+          if (currentPage > 1) {
+            doc.setFillColor(...colorPrimario);
+            doc.rect(0, 0, pageWidth, 18, 'F');
+            doc.setTextColor(...colorTextoClaro);
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'bold');
+            doc.text(`${tituloInstitucion} — Reporte de Inscripción`, 14, 12);
+            doc.setFont(undefined, 'normal');
+            doc.setFontSize(8);
+            doc.text(`${fechaStr}  |  ${estudiantes.length} estudiantes`, pageWidth - 14, 12, { align: 'right' });
+            doc.setDrawColor(...colorAcento);
+            doc.setLineWidth(0.8);
+            doc.line(0, 18, pageWidth, 18);
+          }
+        }
       });
 
-      const fechaArchivo = new Date().toISOString().split('T')[0];
-      doc.save(`Reporte_Inscripcion_${fechaArchivo}.pdf`);
+      // Guardar
+      const fechaArchivo = ahora.toISOString().split('T')[0];
+      const sufijo = bloqueNombre ? `_${bloqueNombre.replace(/\s+/g, '_')}` : '';
+      doc.save(`Reporte_Inscripcion${sufijo}_${fechaArchivo}.pdf`);
       showSuccess('Éxito', 'Archivo PDF exportado correctamente');
-    }).catch(error => {
+
+    } catch (error) {
       console.error('Error al exportar PDF:', error);
       showError('Error', 'No se pudo exportar el archivo PDF. Asegúrate de tener las librerías jspdf y jspdf-autotable instaladas.');
-    });
+    }
   };
 
   return (
@@ -457,7 +673,7 @@ function ReporteInscripcion() {
       <div className="row g-3 mb-4">
         {[
           { 
-            title: 'Estudiantes Inscriptos', 
+            title: 'Estudiantes Inscritos', 
             value: stats.estudiantesInscriptos, 
             icon: 'fas fa-user-check', 
             color: 'success',
@@ -573,7 +789,7 @@ function ReporteInscripcion() {
                 onClick={() => handleFiltroRapido('inscritos')}
               >
                 <i className="fas fa-user-check me-1"></i>
-                Solo Inscriptos
+                Solo Inscritos
               </button>
             </div>
             <div className="col-md-2">

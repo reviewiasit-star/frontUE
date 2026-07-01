@@ -38,6 +38,7 @@ const Compromiso = () => {
   const [error, setError] = useState("");
   const [estudianteSeleccionado, setEstudianteSeleccionado] = useState(false);
   const [becas, setBecas] = useState([]);
+  const [bloques, setBloques] = useState([]);
   const [compromiso, setCompromiso] = useState(null);
   const [pagos, setPagos] = useState([]);
   const [pagosMensuales, setPagosMensuales] = useState([]);
@@ -52,6 +53,19 @@ const Compromiso = () => {
     url: null,
     nombreArchivo: 'comprobante.pdf'
   });
+
+  // ===== ESTADOS PARA MODAL DE SERVICIOS ADQUIRIDOS =====
+  const [showServiciosModal, setShowServiciosModal] = useState(false);
+  const [serviciosAdquiridos, setServiciosAdquiridos] = useState([]);
+  const [serviciosCatalogo, setServiciosCatalogo] = useState([]);
+  const [loadingServicios, setLoadingServicios] = useState(false);
+  const [showRegistrarServicioModal, setShowRegistrarServicioModal] = useState(false);
+  const [formServicio, setFormServicio] = useState({ servicio_id: '', anio: new Date().getFullYear(), monto_mensual: '' });
+  const [mesesServicioSeleccionados, setMesesServicioSeleccionados] = useState([]);
+  const [showPayServicioModal, setShowPayServicioModal] = useState(false);
+  const [payServicioContext, setPayServicioContext] = useState({ item: null, itemsGrupo: [] });
+  const [payServicioForm, setPayServicioForm] = useState({ forma_pago: 'efectivo', numero_comprobante: '', nit_ci: '', fecha_pago: new Date().toISOString().split('T')[0], pagar_todos: false });
+  const [pagandoServicio, setPagandoServicio] = useState(false);
   const [confirmEliminarComprobante, setConfirmEliminarComprobante] = useState({
     isOpen: false,
     pagoId: null,
@@ -167,6 +181,15 @@ const Compromiso = () => {
       .then(setBecas)
       .catch(() => setBecas([]));
     
+    // Cargar bloques para obtener sus logos
+    const apiUrlBloques = getApiUrl('/bloques', user?.rol);
+    fetch(`${apiUrlBloques}/bloques`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => setBloques(Array.isArray(data) ? data : []))
+      .catch(() => setBloques([]));
+    
     const apiUrlNiveles = getApiUrl('/niveles', user?.rol);
     fetch(`${apiUrlNiveles}/niveles`, {
       headers: {
@@ -185,6 +208,32 @@ const Compromiso = () => {
     return becas.find(b => String(b.id) === String(id_beca));
   };
 
+  // Obtener la URL del logo del bloque del estudiante actual
+  const getLogoBloque = () => {
+    if (!inscripcionSeleccionada || !inscripcionSeleccionada.bloque_id) return null;
+    const bloque = bloques.find(b => String(b.id) === String(inscripcionSeleccionada.bloque_id));
+    return bloque?.logo_url || null;
+  };
+
+  // Cargar imagen y convertirla a base64 para usarla en jsPDF
+  const cargarImagenParaPDF = (src) => new Promise((resolve) => {
+    const img = new window.Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function () {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/jpeg'));
+      } catch {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+
   // Buscar por CI
   const handleBuscar = async (e) => {
     e.preventDefault();
@@ -194,7 +243,8 @@ const Compromiso = () => {
       const token = localStorage.getItem('token');
       const user = AuthService.getUser();
       const apiUrl = getApiUrl('/estudiantes', user?.rol);
-      const res = await fetch(`${apiUrl}/estudiantes/buscar-por-ci-estudiante/${encodeURIComponent(ci)}`, {
+      const timestamp = new Date().getTime();
+      const res = await fetch(`${apiUrl}/estudiantes/buscar-por-ci-estudiante/${encodeURIComponent(ci)}?_t=${timestamp}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -250,7 +300,8 @@ const Compromiso = () => {
       const token = localStorage.getItem('token');
       const user = AuthService.getUser();
       const apiUrl = getApiUrl('/estudiantes', user?.rol);
-      const res = await fetch(`${apiUrl}/estudiantes?incluir_concluidos=1&anio=todos`, {
+      const timestamp = new Date().getTime();
+      const res = await fetch(`${apiUrl}/estudiantes?incluir_concluidos=1&anio=todos&_t=${timestamp}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -636,6 +687,194 @@ const Compromiso = () => {
     }
   }, [inscripcionSeleccionada]);
 
+  // ===== FUNCIONES PARA SERVICIOS ADQUIRIDOS =====
+  const MESES_NOMBRES_SRV = { 1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Septiembre',10:'Octubre',11:'Noviembre',12:'Diciembre' };
+
+  // Generar PDF del comprobante de pago de servicio
+  const generarPDFPagoServicio = async (pagoData, servicioItem) => {
+    const doc = new jsPDF();
+    // Determinar qué logo usar: logo del bloque o logo genérico
+    const logoUrlBloque = getLogoBloque();
+    let imgSrc = logo; // fallback: logo genérico
+    if (logoUrlBloque) {
+      imgSrc = logoUrlBloque.startsWith('http') ? logoUrlBloque : window.location.origin + (logoUrlBloque.startsWith('/') ? logoUrlBloque : '/' + logoUrlBloque);
+    }
+
+    const generarContenidoPDFServicio = (imgParaPDF) => {
+      if (imgParaPDF) {
+        doc.addImage(imgParaPDF, 'JPEG', 80, 5, 50, 20);
+      }
+      doc.setFontSize(16);
+      doc.text('Comprobante de Pago de Servicio', 105, 32, { align: 'center' });
+      doc.setFontSize(11);
+      doc.text(`Fecha de emisión: ${new Date().toLocaleDateString('es-BO')}`, 14, 40);
+      doc.text(`Fecha de pago: ${pagoData.fecha_pago ? new Date(pagoData.fecha_pago).toLocaleDateString('es-BO') : new Date().toLocaleDateString('es-BO')}`, 14, 47);
+      doc.text(`Estudiante: ${form.nombre || ''}`, 14, 54);
+      doc.text(`CI: ${form.ci_estudiante || 'No especificado'}`, 14, 61);
+      doc.setFontSize(12);
+      doc.text('Detalle del Servicio:', 14, 70);
+      doc.setFontSize(11);
+      doc.text(`Servicio: ${servicioItem.servicio_descripcion || 'No especificado'}`, 14, 77);
+      doc.text(`Mes: ${MESES_NOMBRES_SRV[servicioItem.mes_inicio] || servicioItem.mes_inicio}`, 14, 84);
+      doc.text(`Año: ${servicioItem.anio || new Date().getFullYear()}`, 14, 91);
+      doc.setFontSize(10);
+      doc.text(`N° Comprobante: ${pagoData.numero_comprobante || 'No especificado'}`, 14, 98);
+      doc.text(`CI del pagador: ${pagoData.nit_ci || 'No especificado'}`, 120, 98);
+      doc.text(`Forma de pago: ${pagoData.forma_pago ? pagoData.forma_pago.toUpperCase() : 'EFECTIVO'}`, 14, 105);
+      doc.setFontSize(13);
+      doc.text('Resumen de la transacción', 14, 115);
+      autoTable(doc, {
+        startY: 120,
+        head: [['Concepto', 'Detalle', 'Monto (Bs)']],
+        body: [[
+          'Pago de Servicio',
+          `${servicioItem.servicio_descripcion || 'Servicio'} - ${MESES_NOMBRES_SRV[servicioItem.mes_inicio] || servicioItem.mes_inicio} ${servicioItem.anio || new Date().getFullYear()}`,
+          `Bs ${Number(servicioItem.monto_mensual || 0).toFixed(2)}`
+        ]],
+        theme: 'grid',
+        styles: { fontSize: 11 },
+        headStyles: { fillColor: [111, 66, 193] },
+        columnStyles: { 0: { cellWidth: 50 }, 1: { cellWidth: 100 }, 2: { cellWidth: 40, halign: 'right' } }
+      });
+      const totalY = doc.lastAutoTable.finalY + 10;
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text(`Total: Bs ${Number(servicioItem.monto_mensual || 0).toFixed(2)}`, 150, totalY, { align: 'right' });
+      doc.setFont(undefined, 'normal');
+      const firmasY = totalY + 20;
+      doc.setFontSize(12);
+      doc.text('Firmas:', 14, firmasY);
+      doc.setLineWidth(0.5);
+      doc.line(20, firmasY + 15, 90, firmasY + 15);
+      doc.line(110, firmasY + 15, 180, firmasY + 15);
+      doc.setFontSize(10);
+      doc.text('Firma del encargado', 35, firmasY + 25);
+      doc.text('Firma del responsable', 120, firmasY + 25);
+      if (pagoData.nit_ci) {
+        doc.setFontSize(9);
+        doc.text(`CI: ${pagoData.nit_ci}`, 130, firmasY + 33);
+      }
+      const nombreArchivo = `comprobante_servicio_${(form.nombre || 'estudiante').replace(/\s+/g,'_')}_${(servicioItem.servicio_descripcion || 'servicio').replace(/\s+/g,'_')}_${servicioItem.mes_inicio}_${servicioItem.anio}.pdf`;
+      doc.save(nombreArchivo);
+    };
+
+    // Cargar imagen del logo y generar PDF
+    cargarImagenParaPDF(imgSrc)
+      .then(b64 => generarContenidoPDFServicio(b64 || null))
+      .catch(() => generarContenidoPDFServicio(null));
+  };
+
+  const cargarServiciosCatalogo = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const user = AuthService.getUser();
+      const apiUrl = getApiUrl('/servicios', user?.rol);
+      const res = await fetch(`${apiUrl}/servicios`, { headers: { 'Authorization': `Bearer ${token}` } });
+      const data = await res.json();
+      setServiciosCatalogo(Array.isArray(data) ? data : []);
+    } catch (_) {}
+  };
+
+  const cargarServiciosAdquiridos = async (estudianteId) => {
+    if (!estudianteId) return;
+    setLoadingServicios(true);
+    try {
+      const token = localStorage.getItem('token');
+      const user = AuthService.getUser();
+      const apiUrl = getApiUrl('/servicios-estudiante', user?.rol);
+      const res = await fetch(`${apiUrl}/servicios-estudiante/${estudianteId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+      const data = await res.json();
+      setServiciosAdquiridos(Array.isArray(data) ? data.filter(a => String(a.estado || 'activo').toLowerCase() !== 'anulado') : []);
+    } catch (_) {
+      setServiciosAdquiridos([]);
+    } finally {
+      setLoadingServicios(false);
+    }
+  };
+
+  const abrirModalServicios = async () => {
+    await cargarServiciosCatalogo();
+    if (form.id) await cargarServiciosAdquiridos(form.id);
+    setShowServiciosModal(true);
+  };
+
+  const registrarNuevoServicio = async () => {
+    if (!formServicio.servicio_id || !formServicio.anio || !formServicio.monto_mensual || mesesServicioSeleccionados.length === 0) {
+      alert('Por favor completa todos los campos y selecciona al menos un mes.');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('token');
+      const user = AuthService.getUser();
+      const apiUrl = getApiUrl('/servicios-estudiante', user?.rol);
+      const payloads = mesesServicioSeleccionados.map(m => ({
+        estudiante_id: form.id,
+        servicio_id: Number(formServicio.servicio_id),
+        anio: Number(formServicio.anio),
+        mes_inicio: Number(m),
+        mes_fin: Number(m),
+        monto_mensual: parseFloat(formServicio.monto_mensual)
+      }));
+      await Promise.all(payloads.map(p => fetch(`${apiUrl}/servicios-estudiante`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(p)
+      })));
+      setShowRegistrarServicioModal(false);
+      setFormServicio({ servicio_id: '', anio: new Date().getFullYear(), monto_mensual: '' });
+      setMesesServicioSeleccionados([]);
+      await cargarServiciosAdquiridos(form.id);
+      showSuccess('Servicio registrado correctamente.');
+    } catch (_) {
+      showError('No se pudo registrar el servicio.');
+    }
+  };
+
+  const procesarPagoServicioEnCompromiso = async () => {
+    try {
+      setPagandoServicio(true);
+      const token = localStorage.getItem('token');
+      const user = AuthService.getUser();
+      const apiUrl = getApiUrl('/servicios-estudiante', user?.rol);
+      const toPay = payServicioForm.pagar_todos
+        ? (payServicioContext.itemsGrupo || []).filter(x => !x.pagado)
+        : [payServicioContext.item];
+      for (const it of toPay) {
+        const resp = await fetch(`${apiUrl}/servicios-estudiante/${it.id}/pagar`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({
+            forma_pago: payServicioForm.forma_pago,
+            numero_comprobante: payServicioForm.numero_comprobante || null,
+            nit_ci: payServicioForm.nit_ci || null,
+            fecha_pago: payServicioForm.fecha_pago
+          })
+        });
+        if (!resp.ok) throw new Error('No se pudo registrar el pago del servicio');
+      }
+      setShowPayServicioModal(false);
+      await cargarServiciosAdquiridos(form.id);
+      // Generar PDF automáticamente por cada pago realizado
+      toPay.forEach(it => {
+        generarPDFPagoServicio(
+          {
+            fecha_pago: payServicioForm.fecha_pago,
+            forma_pago: payServicioForm.forma_pago,
+            numero_comprobante: payServicioForm.numero_comprobante,
+            nit_ci: payServicioForm.nit_ci
+          },
+          it
+        );
+      });
+      showSuccess(`${toPay.length} pago(s) de servicio registrado(s). PDF generado automáticamente.`);
+    } catch (e) {
+      showError(e.message);
+    } finally {
+      setPagandoServicio(false);
+    }
+  };
+  // ===== FIN FUNCIONES SERVICIOS =====
+
   const buscarDeNuevo = () => {
     setEstudianteSeleccionado(false);
     setForm({
@@ -665,13 +904,20 @@ const Compromiso = () => {
   };
 
   // Función para generar el PDF del pago
-  const generarPDFPago = (pago, estudiante, saldoPendiente) => {
+  const generarPDFPago = async (pago, estudiante, saldoPendiente) => {
     const doc = new jsPDF();
-    // Cargar el logo como imagen base64
-    const img = new window.Image();
-    img.src = logo;
-    img.onload = function() {
-      doc.addImage(img, 'JPEG', 80, 5, 50, 20); // Centrado arriba
+    // Determinar qué logo usar: logo del bloque o logo genérico
+    const logoUrlBloque = getLogoBloque();
+    let imgSrc = logo; // fallback: logo genérico importado
+    if (logoUrlBloque) {
+      // Construir URL absoluta del logo del bloque
+      imgSrc = logoUrlBloque.startsWith('http') ? logoUrlBloque : window.location.origin + (logoUrlBloque.startsWith('/') ? logoUrlBloque : '/' + logoUrlBloque);
+    }
+
+    const generarContenidoPDF = (imgParaPDF) => {
+      if (imgParaPDF) {
+        doc.addImage(imgParaPDF, 'JPEG', 80, 5, 50, 20); // Centrado arriba
+      }
       doc.setFontSize(16);
       doc.text('Comprobante de Pago', 105, 32, { align: 'center' });
       doc.setFontSize(11);
@@ -829,6 +1075,11 @@ const Compromiso = () => {
       
       doc.save(`comprobante_pago_${estudiante.nombre}_${pago.mes}_${pago.anio}.pdf`);
     };
+
+    // Cargar la imagen del logo (bloque o genérico) y generar el PDF
+    cargarImagenParaPDF(imgSrc)
+      .then(b64 => generarContenidoPDF(b64 || null))
+      .catch(() => generarContenidoPDF(null));
   };
 
 
@@ -2283,12 +2534,34 @@ const Compromiso = () => {
                 </div>
               )}
 
+              {/* Tarjeta de Servicios Adquiridos */}
+              {compromiso && inscripcionSeleccionada && !mostrarInscripciones && (
+                <div className="card mb-3">
+                  <div className="card-header" style={{ background: 'linear-gradient(90deg, #6f42c1 0%, #e83e8c 100%)', color: 'white' }}>
+                    <i className="fas fa-box-open me-2"></i>
+                    Servicios Adquiridos
+                  </div>
+                  <div className="card-body text-center py-3">
+                    <p className="text-muted mb-3">
+                      Consulta y gestiona los servicios adicionales contratados para este estudiante (ej: Apoyo Escolar).
+                    </p>
+                    <button
+                      className="btn btn-lg"
+                      style={{ background: 'linear-gradient(90deg, #6f42c1 0%, #e83e8c 100%)', color: 'white', fontWeight: 'bold', borderRadius: '10px', boxShadow: '0 3px 10px rgba(111,66,193,0.3)' }}
+                      onClick={abrirModalServicios}
+                    >
+                      <i className="fas fa-box-open me-2"></i>
+                      Ver Servicios Adquiridos
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Botón para abrir modal de pago - Solo mostrar si hay inscripción seleccionada */}
               {compromiso && inscripcionSeleccionada && !mostrarInscripciones && (
                 <div className="card mb-3">
                   <div className="card-body text-center">
-                    <button 
+                    <button
                       className="btn btn-success btn-lg"
                       onClick={() => setMostrarModalPago(true)}
                     >
@@ -2569,6 +2842,289 @@ const Compromiso = () => {
           </div>
         </div>
       )}
+
+      {/* ===== MODAL DE SERVICIOS ADQUIRIDOS ===== */}
+      {showServiciosModal && (
+        <div className="modal fade show" style={{ display: 'block', background: 'rgba(0,0,0,0.55)' }} tabIndex="-1">
+          <div className="modal-dialog modal-xl modal-dialog-scrollable">
+            <div className="modal-content">
+              <div className="modal-header text-white" style={{ background: 'linear-gradient(90deg, #6f42c1 0%, #e83e8c 100%)' }}>
+                <h5 className="modal-title">
+                  <i className="fas fa-box-open me-2"></i>
+                  Servicios Adquiridos — {form.nombre}
+                </h5>
+                <button type="button" className="btn-close btn-close-white" onClick={() => setShowServiciosModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                {/* Botón registrar nuevo servicio */}
+                <div className="d-flex justify-content-end mb-3">
+                  <button
+                    className="btn btn-success"
+                    onClick={() => { setFormServicio({ servicio_id: '', anio: new Date().getFullYear(), monto_mensual: '' }); setMesesServicioSeleccionados([]); setShowRegistrarServicioModal(true); }}
+                  >
+                    <i className="fas fa-plus me-2"></i>Registrar servicio
+                  </button>
+                </div>
+
+                {loadingServicios && (
+                  <div className="text-center py-4">
+                    <div className="spinner-border text-primary" role="status"></div>
+                    <p className="mt-2 text-muted">Cargando servicios...</p>
+                  </div>
+                )}
+
+                {!loadingServicios && serviciosAdquiridos.length === 0 && (
+                  <div className="alert alert-warning text-center">
+                    <i className="fas fa-info-circle me-2"></i>
+                    Este estudiante no tiene servicios adquiridos registrados.
+                  </div>
+                )}
+
+                {!loadingServicios && serviciosAdquiridos.length > 0 && (
+                  Object.entries(
+                    serviciosAdquiridos.reduce((acc, item) => {
+                      const key = `${item.servicio_id}-${item.servicio_descripcion}`;
+                      if (!acc[key]) acc[key] = [];
+                      acc[key].push(item);
+                      return acc;
+                    }, {})
+                  ).map(([key, items]) => {
+                    const descripcion = items[0].servicio_descripcion;
+                    const pendientes = items.filter(i => !i.pagado).length;
+                    return (
+                      <div key={key} className="card mb-3 border-0 shadow-sm">
+                        <div className="card-header d-flex justify-content-between align-items-center" style={{ background: '#f8f0ff' }}>
+                          <strong style={{ color: '#6f42c1' }}><i className="fas fa-tag me-2"></i>{descripcion}</strong>
+                          <div className="d-flex gap-2">
+                            <span className="badge bg-secondary">{items.length} mes(es)</span>
+                            {pendientes > 0 && <span className="badge bg-warning text-dark">{pendientes} pendiente(s)</span>}
+                          </div>
+                        </div>
+                        <div className="card-body p-0">
+                          {/* Vista escritorio */}
+                          <div className="d-none d-md-block">
+                            <table className="table table-hover mb-0">
+                              <thead className="table-light">
+                                <tr>
+                                  <th>Año</th>
+                                  <th>Mes</th>
+                                  <th>Monto mensual</th>
+                                  <th>Estado</th>
+                                  <th>Forma de pago</th>
+                                  <th>Fecha pago</th>
+                                  <th>Acción</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {items.map(a => (
+                                  <tr key={a.id}>
+                                    <td>{a.anio}</td>
+                                    <td>{MESES_NOMBRES_SRV[a.mes_inicio] || `Mes ${a.mes_inicio}`}</td>
+                                    <td><strong>Bs {Number(a.monto_mensual).toFixed(2)}</strong></td>
+                                    <td>
+                                      {a.pagado
+                                        ? <span className="badge bg-success">Pagado</span>
+                                        : <span className="badge bg-warning text-dark">Pendiente</span>
+                                      }
+                                    </td>
+                                    <td>{a.forma_pago ? a.forma_pago.toUpperCase() : '—'}</td>
+                                    <td>{a.fecha_pago ? new Date(a.fecha_pago).toLocaleDateString('es-BO') : '—'}</td>
+                                    <td>
+                                      {a.estado === 'activo' && !a.pagado && (
+                                        <button
+                                          className="btn btn-sm btn-primary"
+                                          onClick={() => {
+                                            setPayServicioContext({ item: a, itemsGrupo: items });
+                                            setPayServicioForm({ forma_pago: 'efectivo', numero_comprobante: '', nit_ci: '', fecha_pago: new Date().toISOString().split('T')[0], pagar_todos: false });
+                                            setShowPayServicioModal(true);
+                                          }}
+                                        >
+                                          <i className="fas fa-money-bill me-1"></i>Pagar
+                                        </button>
+                                      )}
+                                      {a.pagado && (
+                                        <button
+                                          className="btn btn-sm btn-outline-secondary"
+                                          title="Descargar comprobante PDF"
+                                          onClick={() => generarPDFPagoServicio(
+                                            { fecha_pago: a.fecha_pago, forma_pago: a.forma_pago, numero_comprobante: a.numero_comprobante, nit_ci: a.nit_ci },
+                                            a
+                                          )}
+                                        >
+                                          <i className="fas fa-file-pdf me-1"></i>PDF
+                                        </button>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          {/* Vista móvil */}
+                          <div className="d-md-none">
+                            {items.map(a => (
+                              <div key={a.id} className="px-3 py-2 border-bottom">
+                                <div className="d-flex justify-content-between align-items-center mb-1">
+                                  <strong>{MESES_NOMBRES_SRV[a.mes_inicio] || `Mes ${a.mes_inicio}`} {a.anio}</strong>
+                                  {a.pagado
+                                    ? <span className="badge bg-success">Pagado</span>
+                                    : <span className="badge bg-warning text-dark">Pendiente</span>
+                                  }
+                                </div>
+                                <div className="d-flex justify-content-between align-items-center">
+                                  <span className="text-muted" style={{ fontSize: '0.85rem' }}>Bs {Number(a.monto_mensual).toFixed(2)}</span>
+                                  <div className="d-flex gap-1">
+                                    {a.estado === 'activo' && !a.pagado && (
+                                      <button
+                                        className="btn btn-sm btn-primary"
+                                        onClick={() => {
+                                          setPayServicioContext({ item: a, itemsGrupo: items });
+                                          setPayServicioForm({ forma_pago: 'efectivo', numero_comprobante: '', nit_ci: '', fecha_pago: new Date().toISOString().split('T')[0], pagar_todos: false });
+                                          setShowPayServicioModal(true);
+                                        }}
+                                      >Pagar</button>
+                                    )}
+                                    {a.pagado && (
+                                      <button
+                                        className="btn btn-sm btn-outline-secondary"
+                                        title="Descargar PDF"
+                                        onClick={() => generarPDFPagoServicio(
+                                          { fecha_pago: a.fecha_pago, forma_pago: a.forma_pago, numero_comprobante: a.numero_comprobante, nit_ci: a.nit_ci },
+                                          a
+                                        )}
+                                      ><i className="fas fa-file-pdf"></i></button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowServiciosModal(false)}>Cerrar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para registrar nuevo servicio (dentro del modal de servicios) */}
+      {showRegistrarServicioModal && (
+        <div className="modal fade show" style={{ display: 'block', background: 'rgba(0,0,0,0.7)', zIndex: 1060 }} tabIndex="-1">
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header bg-success text-white">
+                <h5 className="modal-title"><i className="fas fa-plus me-2"></i>Registrar servicio para {form.nombre}</h5>
+                <button type="button" className="btn-close btn-close-white" onClick={() => setShowRegistrarServicioModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <div className="row g-3">
+                  <div className="col-md-6">
+                    <label className="form-label fw-bold">Servicio</label>
+                    <select className="form-select" value={formServicio.servicio_id} onChange={e => setFormServicio({ ...formServicio, servicio_id: e.target.value })}>
+                      <option value="">Seleccionar...</option>
+                      {serviciosCatalogo.map(s => <option key={s.id} value={s.id}>{s.descripcion}</option>)}
+                    </select>
+                  </div>
+                  <div className="col-md-3">
+                    <label className="form-label fw-bold">Año</label>
+                    <input type="number" className="form-control" value={formServicio.anio} onChange={e => setFormServicio({ ...formServicio, anio: e.target.value })} />
+                  </div>
+                  <div className="col-md-3">
+                    <label className="form-label fw-bold">Monto mensual (Bs)</label>
+                    <input type="number" step="0.01" className="form-control" value={formServicio.monto_mensual} onChange={e => setFormServicio({ ...formServicio, monto_mensual: e.target.value })} />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <label className="form-label fw-bold">Selecciona los meses</label>
+                  <div className="row g-2">
+                    {[{n:1,nombre:'Enero'},{n:2,nombre:'Febrero'},{n:3,nombre:'Marzo'},{n:4,nombre:'Abril'},{n:5,nombre:'Mayo'},{n:6,nombre:'Junio'},{n:7,nombre:'Julio'},{n:8,nombre:'Agosto'},{n:9,nombre:'Septiembre'},{n:10,nombre:'Octubre'},{n:11,nombre:'Noviembre'},{n:12,nombre:'Diciembre'}].map(m => (
+                      <div key={m.n} className="col-6 col-sm-4 col-md-3">
+                        <div className="form-check">
+                          <input className="form-check-input" type="checkbox" id={`srv-m-${m.n}`}
+                            checked={mesesServicioSeleccionados.includes(m.n)}
+                            onChange={e => setMesesServicioSeleccionados(prev => e.target.checked ? [...prev, m.n] : prev.filter(x => x !== m.n))}
+                          />
+                          <label htmlFor={`srv-m-${m.n}`} className="form-check-label">{m.nombre}</label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {mesesServicioSeleccionados.length > 0 && formServicio.monto_mensual && (
+                  <div className="alert alert-info mt-3">
+                    <strong>Resumen:</strong> {mesesServicioSeleccionados.length} mes(es) × Bs {Number(formServicio.monto_mensual).toFixed(2)} = <strong>Bs {(mesesServicioSeleccionados.length * parseFloat(formServicio.monto_mensual || 0)).toFixed(2)}</strong>
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowRegistrarServicioModal(false)}>Cancelar</button>
+                <button type="button" className="btn btn-success" onClick={registrarNuevoServicio}>
+                  <i className="fas fa-save me-2"></i>Registrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de pago de servicio (desde Compromiso) */}
+      {showPayServicioModal && payServicioContext.item && (
+        <div className="modal fade show" style={{ display: 'block', background: 'rgba(0,0,0,0.7)', zIndex: 1070 }} tabIndex="-1">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header bg-primary text-white">
+                <h5 className="modal-title"><i className="fas fa-money-bill me-2"></i>Pagar Servicio</h5>
+                <button type="button" className="btn-close btn-close-white" onClick={() => setShowPayServicioModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-2"><strong>Estudiante:</strong> {form.nombre}</div>
+                <div className="mb-3"><strong>Servicio:</strong> {payServicioContext.itemsGrupo?.[0]?.servicio_descripcion}</div>
+                <div className="row g-2">
+                  <div className="col-md-6">
+                    <label className="form-label">Forma de pago</label>
+                    <select className="form-select" value={payServicioForm.forma_pago} onChange={e => setPayServicioForm({ ...payServicioForm, forma_pago: e.target.value })}>
+                      <option value="efectivo">Efectivo</option>
+                      <option value="qr">QR</option>
+                      <option value="transferencia">Transferencia</option>
+                      <option value="otro">Otro</option>
+                    </select>
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Fecha de pago</label>
+                    <input type="date" className="form-control" value={payServicioForm.fecha_pago} onChange={e => setPayServicioForm({ ...payServicioForm, fecha_pago: e.target.value })} />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Nº comprobante (opcional)</label>
+                    <input className="form-control" value={payServicioForm.numero_comprobante} onChange={e => setPayServicioForm({ ...payServicioForm, numero_comprobante: e.target.value })} />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">NIT/CI (opcional)</label>
+                    <input className="form-control" value={payServicioForm.nit_ci} onChange={e => setPayServicioForm({ ...payServicioForm, nit_ci: e.target.value })} />
+                  </div>
+                </div>
+                <div className="form-check mt-3">
+                  <input className="form-check-input" type="checkbox" id="pagar-todos-srv" checked={payServicioForm.pagar_todos} onChange={e => setPayServicioForm({ ...payServicioForm, pagar_todos: e.target.checked })} />
+                  <label className="form-check-label" htmlFor="pagar-todos-srv">Pagar todos los meses pendientes de este servicio</label>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowPayServicioModal(false)} disabled={pagandoServicio}>Cancelar</button>
+                <button type="button" className="btn btn-primary" onClick={procesarPagoServicioEnCompromiso} disabled={pagandoServicio}>
+                  {pagandoServicio ? 'Procesando...' : (payServicioForm.pagar_todos ? 'Pagar todos' : 'Confirmar pago')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ===== FIN MODAL SERVICIOS ADQUIRIDOS ===== */}
+
       
       {/* Modal de visualización de comprobante */}
       <ModalVisualizarComprobante

@@ -559,35 +559,6 @@ function ListaInscriptos() {
       });
   }, []);
 
-  // Cuando se selecciona un nivel, establecer automáticamente el bloque y cargar cursos
-  useEffect(() => {
-    if (formPreinscripcion.nivel_id) {
-      // Buscar el nivel seleccionado para obtener su bloque_id
-      const nivelSeleccionado = niveles.find(n => n.id == formPreinscripcion.nivel_id);
-      if (nivelSeleccionado && nivelSeleccionado.bloque_id) {
-        // Establecer automáticamente el bloque_id
-        setFormPreinscripcion(prev => ({
-          ...prev,
-          bloque_id: nivelSeleccionado.bloque_id,
-          curso_id: '', // Limpiar curso al cambiar nivel
-          turno: '',
-          hora_inicio: '',
-          hora_fin: ''
-        }));
-      }
-    } else {
-      // Si no hay nivel seleccionado, limpiar bloque y curso
-      setFormPreinscripcion(prev => ({
-        ...prev,
-        bloque_id: '',
-        curso_id: '',
-        turno: '',
-        hora_inicio: '',
-        hora_fin: ''
-      }));
-    }
-  }, [formPreinscripcion.nivel_id, niveles]);
-
   // Cargar cursos cuando cambia el nivel en preinscripción
   useEffect(() => {
     if (formPreinscripcion.nivel_id) {
@@ -717,7 +688,8 @@ function ListaInscriptos() {
               fecha_nacimiento: data.fecha_nacimiento ? data.fecha_nacimiento.split('T')[0] : '',
               lugar_nacimiento: data.lugar_nacimiento || '',
               direccion: data.direccion || '',
-              genero: data.genero || '',
+              genero: (data.genero && data.genero.toUpperCase().startsWith('M')) ? 'M' : 
+                      (data.genero && data.genero.toUpperCase().startsWith('F')) ? 'F' : (data.genero || ''),
               codigo_estudiante: data.codigo_estudiante || '',
               nombre_padre: data.nombre_padre || '',
               apellido_padre: data.apellido_padre || '',
@@ -1373,6 +1345,21 @@ function ListaInscriptos() {
     setFormPreinscripcion(prev => {
       const newForm = { ...prev, [name]: value };
 
+      if (name === 'bloque_id') {
+        newForm.nivel_id = '';
+        newForm.curso_id = '';
+        newForm.turno = '';
+        newForm.hora_inicio = '';
+        newForm.hora_fin = '';
+      }
+
+      if (name === 'nivel_id') {
+        newForm.curso_id = '';
+        newForm.turno = '';
+        newForm.hora_inicio = '';
+        newForm.hora_fin = '';
+      }
+
       if (name === 'curso_id') {
         const cursoSeleccionado = cursos.find(c => String(c.id) === String(value));
         newForm.turno = cursoSeleccionado?.turno || '';
@@ -1644,8 +1631,21 @@ function ListaInscriptos() {
           }
         }
       } catch (_) { }
+
+      const bloqueMatch = bloques.find(b => String(b.id) === String(formPreinscripcion?.bloque_id) || b.descripcion === bloqueNombre);
+      let logoUrl = '/src/assets/img/logo.jpg';
+      if (bloqueMatch && bloqueMatch.logo_url) {
+        logoUrl = bloqueMatch.logo_url.startsWith('http')
+          ? bloqueMatch.logo_url
+          : BACKEND_PRINCIPAL_ORIGIN + (bloqueMatch.logo_url.startsWith('/') ? bloqueMatch.logo_url : '/' + bloqueMatch.logo_url);
+      }
+
       let logoBase64 = null;
-      try { logoBase64 = await getImageBase64('/src/assets/img/logo.jpg'); } catch { }
+      try { 
+        logoBase64 = await getImageBase64(logoUrl); 
+      } catch { 
+        try { logoBase64 = await getImageBase64('/src/assets/img/logo.jpg'); } catch { }
+      }
       const doc = new jsPDF();
       if (logoBase64) doc.addImage(logoBase64, 'JPEG', 89, 8, 32, 20);
       doc.setFillColor(255, 255, 255);
@@ -1822,11 +1822,27 @@ function ListaInscriptos() {
   };
 
   // Genera Plan de Pagos/Compromiso Económico basado en la preinscripción
-  const generarPlanPagosPDF = (estudiante, formPre, calculo) => {
+  const generarPlanPagosPDF = async (estudiante, formPre, calculo) => {
     try {
       const doc = new jsPDF();
+      
+      const bloqueMatch = bloques.find(b => String(b.id) === String(formPre?.bloque_id));
+      let logoUrl = '/src/assets/img/logo.jpg';
+      if (bloqueMatch && bloqueMatch.logo_url) {
+        logoUrl = bloqueMatch.logo_url.startsWith('http')
+          ? bloqueMatch.logo_url
+          : BACKEND_PRINCIPAL_ORIGIN + (bloqueMatch.logo_url.startsWith('/') ? bloqueMatch.logo_url : '/' + bloqueMatch.logo_url);
+      }
+
       let logoBase64 = null;
-      getImageBase64('/src/assets/img/logo.jpg').then(b64 => { logoBase64 = b64; if (logoBase64) doc.addImage(logoBase64, 'JPEG', 89, 8, 32, 20); });
+      try {
+        logoBase64 = await getImageBase64(logoUrl);
+      } catch {
+        try { logoBase64 = await getImageBase64('/src/assets/img/logo.jpg'); } catch { }
+      }
+      
+      if (logoBase64) doc.addImage(logoBase64, 'JPEG', 89, 8, 32, 20);
+      
       doc.setFillColor(255, 255, 255);
       doc.rect(20, 28, 170, 14, 'F');
       doc.setFontSize(14);
@@ -1845,16 +1861,19 @@ function ListaInscriptos() {
       doc.line(20, 50, 190, 50);
       let y = 56;
       const becaSel = becas.find(b => String(b.id) === String(formPre?.id_beca));
+      const bodyData = [
+        ['Estudiante', `${estudiante.nombre} ${estudiante.apellido_paterno || ''} ${estudiante.apellido_materno || ''}`],
+        ['CI', estudiante.ci_estudiante || ''],
+        ['Turno', formPre.turno || '']
+      ];
+      if (becaSel) {
+        bodyData.push(['Beca', `${becaSel.descripcion} (${becaSel.descuento}%)`]);
+        bodyData.push(['Meses con beca', (formPre.meses_beca || []).join(', ') || 'Ninguno']);
+      }
       autoTable(doc, {
         startY: y,
         head: [['Campo', 'Detalle']],
-        body: [
-          ['Estudiante', `${estudiante.nombre} ${estudiante.apellido_paterno || ''} ${estudiante.apellido_materno || ''}`],
-          ['CI', estudiante.ci_estudiante || ''],
-          ['Turno', formPre.turno || ''],
-          ['Beca', becaSel ? `${becaSel.descripcion} (${becaSel.descuento}% )` : 'Sin beca'],
-          ['Meses con beca', (formPre.meses_beca || []).join(', ') || 'Ninguno']
-        ],
+        body: bodyData,
         theme: 'grid', styles: { fontSize: 6 }
       });
       y = doc.lastAutoTable.finalY + 6;
@@ -1912,6 +1931,9 @@ function ListaInscriptos() {
         canvas.width = img.width;
         canvas.height = img.height;
         const ctx = canvas.getContext('2d');
+        // Rellenar con blanco para evitar fondo negro en PNGs con transparencia
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0);
         resolve(canvas.toDataURL('image/jpeg'));
       };
@@ -1964,12 +1986,20 @@ function ListaInscriptos() {
         }
       }
       // Cargar solo el logo a base64
+      const bloqueMatch = bloques.find(b => String(b.id) === String(inscripto.bloque_id) || b.descripcion === finalBloque);
+      let logoUrl = '/src/assets/img/logo.jpg';
+      if (bloqueMatch && bloqueMatch.logo_url) {
+        logoUrl = bloqueMatch.logo_url.startsWith('http')
+          ? bloqueMatch.logo_url
+          : BACKEND_PRINCIPAL_ORIGIN + (bloqueMatch.logo_url.startsWith('/') ? bloqueMatch.logo_url : '/' + bloqueMatch.logo_url);
+      }
+
       let logoBase64;
       try {
-        logoBase64 = await getImageBase64('/src/assets/img/logo.jpg');
+        logoBase64 = await getImageBase64(logoUrl);
       } catch (logoError) {
         try {
-          logoBase64 = await getImageBase64('/logo-simple.svg');
+          logoBase64 = await getImageBase64('/src/assets/img/logo.jpg');
         } catch (svgError) {
           // Continuar sin logo si hay error
           logoBase64 = null;
@@ -2383,7 +2413,7 @@ function ListaInscriptos() {
               ))}
             </select>
           </div>
-          <div className="col-12 col-md-9">
+          <div className="col-12 col-md-7">
             <label className="form-label">Buscar</label>
             <input
               type="text"
@@ -2392,6 +2422,22 @@ function ListaInscriptos() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+          </div>
+          <div className="col-12 col-md-2 d-flex">
+            <button
+              className="btn btn-outline-primary mt-auto w-100"
+              onClick={() => {
+                if (typeof cargarInscriptos === 'function') {
+                  cargarInscriptos(typeof filtroActivo !== 'undefined' ? filtroActivo : 'todos');
+                } else if (typeof fetchEstudiantes === 'function') {
+                  fetchEstudiantes();
+                } else {
+                  window.location.reload();
+                }
+              }}
+            >
+              <i className="fas fa-sync-alt me-2"></i>Actualizar
+            </button>
           </div>
         </div>
       </div>
@@ -3769,24 +3815,7 @@ function ListaInscriptos() {
                       </h6>
 
                       <div className="row">
-                        {/* Nivel - Primero */}
-                        <div className="col-md-6 mb-3">
-                          <label className="form-label">Nivel *</label>
-                          <select
-                            className="form-select"
-                            name="nivel_id"
-                            value={formPreinscripcion.nivel_id}
-                            onChange={handleChangePreinscripcion}
-                            required
-                          >
-                            <option value="">Seleccione nivel</option>
-                            {niveles.map((nivel, index) => (
-                              <option key={`nivel-${nivel.id}-${index}`} value={nivel.id}>{nivel.nombre}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* Bloque - Segundo (bloqueado cuando hay nivel seleccionado) */}
+                        {/* Bloque - Primero */}
                         <div className="col-md-6 mb-3">
                           <label className="form-label">Bloque *</label>
                           <select
@@ -3795,23 +3824,32 @@ function ListaInscriptos() {
                             value={formPreinscripcion.bloque_id}
                             onChange={handleChangePreinscripcion}
                             required
-                            disabled={!!formPreinscripcion.nivel_id}
-                            style={{
-                              backgroundColor: formPreinscripcion.nivel_id ? '#e9ecef' : '',
-                              cursor: formPreinscripcion.nivel_id ? 'not-allowed' : 'pointer'
-                            }}
                           >
                             <option value="">Seleccione bloque</option>
                             {bloques.map((bloque, index) => (
                               <option key={`bloque-${bloque.id}-${index}`} value={bloque.id}>{bloque.descripcion}</option>
                             ))}
                           </select>
-                          {formPreinscripcion.nivel_id && (
-                            <small className="text-muted d-block mt-1">
-                              <i className="fas fa-info-circle me-1"></i>
-                              Bloque asignado automáticamente según el nivel
-                            </small>
-                          )}
+                        </div>
+
+                        {/* Nivel - Segundo */}
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label">Nivel *</label>
+                          <select
+                            className="form-select"
+                            name="nivel_id"
+                            value={formPreinscripcion.nivel_id}
+                            onChange={handleChangePreinscripcion}
+                            required
+                            disabled={!formPreinscripcion.bloque_id}
+                          >
+                            <option value="">Seleccione nivel</option>
+                            {niveles
+                              .filter(nivel => !formPreinscripcion.bloque_id || nivel.bloque_id == formPreinscripcion.bloque_id)
+                              .map((nivel, index) => (
+                              <option key={`nivel-${nivel.id}-${index}`} value={nivel.id}>{nivel.nombre}</option>
+                            ))}
+                          </select>
                         </div>
 
                         {/* Curso - Tercero */}
