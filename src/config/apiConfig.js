@@ -1,5 +1,5 @@
 // URL fija de Railway para el backend principal
-const RAILWAY_BACKEND_PRINCIPAL = 'https://backprincipalemiwch-production.up.railway.app';
+const RAILWAY_BACKEND_PRINCIPAL = 'https://backendprincipal-production-6f16.up.railway.app';
 
 function isLocalEnvironment() {
   if (typeof window === 'undefined') return true;
@@ -8,7 +8,12 @@ function isLocalEnvironment() {
 }
 
 function normalizeBase(url) {
-  return String(url || '').replace(/\/$/, '');
+  let u = String(url || '').trim().replace(/\/$/, '');
+  // Si no tiene protocolo, añadir https://
+  if (u && !u.startsWith('http://') && !u.startsWith('https://')) {
+    u = 'https://' + u;
+  }
+  return u;
 }
 
 function resolvePrincipalOrigin() {
